@@ -44,12 +44,16 @@ jobs:
           LANG: en_US.UTF-8
 
       - name: Xcode build (Simulator, no code signing)
+        env:
+          RCT_NO_LAUNCH_PACKAGER: '1'
+          NODE_OPTIONS: '--max-old-space-size=6144'
         run: |
           set -o pipefail
           export NODE_BINARY="$(command -v node)"
           echo "NODE_BINARY=$NODE_BINARY"
           node -v
           xcodebuild -version
+          # -jobs 1 + parallelizeTargets NO: GHA runner'da OOM / kesilen log azalır
           xcodebuild \
             -workspace ios/faleyna.xcworkspace \
             -scheme faleyna \
@@ -57,10 +61,25 @@ jobs:
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -parallelizeTargets NO \
+            -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             COMPILER_INDEX_STORE_ENABLE=NO \
             build 2>&1 | tee "$RUNNER_TEMP/xcodebuild.log"
+
+      - name: Xcode hata özeti (log sonu)
+        if: failure()
+        run: |
+          LOG="${RUNNER_TEMP}/xcodebuild.log"
+          if [ -f "$LOG" ]; then
+            echo "========== Son 200 satır =========="
+            tail -n 200 "$LOG"
+            echo "========== error: / BUILD FAILED satırları =========="
+            grep -E "error: |fatal error:|undefined|BUILD FAILED|Command .* failed" "$LOG" | tail -n 80 || true
+          else
+            echo "xcodebuild.log bulunamadı"
+          fi
 
       - name: Upload Xcode log on failure
         if: failure()
