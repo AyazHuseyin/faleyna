@@ -5,7 +5,7 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
-# @react-native-firebase: Swift pod'lar (FirebaseCoreInternal) + statik link için GoogleUtilities module map
+# firebase-ios-sdk v9+ / RN Firebase: statik framework + use_frameworks (modül haritası için zorunlu)
 # https://rnfirebase.io/#altering-cocoapods-to-use-frameworks
 $RNFirebaseAsStaticFramework = true
 
@@ -16,17 +16,11 @@ ENV['RCT_NEW_ARCH_ENABLED'] ||= '0'
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
-linkage = ENV['USE_FRAMEWORKS']
-if linkage != nil
-  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
-  use_frameworks! :linkage => linkage.to_sym
-end
-
 target 'faleyna' do
   config = use_native_modules!
 
-  # FirebaseCoreInternal (Swift) → GoogleUtilities module map (statik lib)
-  pod 'GoogleUtilities', :modular_headers => true
+  # RN Firebase / firebase-ios-sdk: aksi halde "Module 'FirebaseCore' not found" (ör. FirebaseInstallations)
+  use_frameworks! :linkage => :static
 
   use_react_native!(
     :path => config[:reactNativePath],
