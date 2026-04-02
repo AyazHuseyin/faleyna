@@ -1,0 +1,39 @@
+Faleyna — iOS kurulum özeti (sıfırdan kontrol listesi)
+======================================================
+
+1) Apple Developer
+   - Apple Developer Program üyeliği ($/yıl).
+   - Identifiers → App ID: com.faleyna.app (Xcode ile aynı olmalı).
+   - "Sign In with Apple" yeteneğini bu App ID için açın.
+
+2) Firebase (mevcut proje: faleyna-9ba84)
+   - iOS uygulaması ekleyin, paket kimliği: com.faleyna.app.
+   - GoogleService-Info.plist indirip ios/faleyna/ içine koyun ve Xcode’da
+     "faleyna" hedefine ekleyin (Copy items if needed).
+   - Örnek şablon: GoogleService-Info.plist.example
+
+3) Google ile giriş (iOS)
+   - Google Cloud Console’da aynı Firebase projesine bağlı OAuth "iOS" istemcisi oluşturun.
+   - LoginScreen.tsx içinde IOS_GOOGLE_CLIENT_ID sabitini doldurun VEYA
+     yalnızca GoogleService-Info.plist kullanın (CLIENT_ID).
+   - Info.plist → CFBundleURLTypes içine REVERSED_CLIENT_ID ekleyin
+     (plist dosyasındaki değer; Google oturum geri dönüşü için zorunlu).
+
+4) Xcode / CocoaPods (macOS veya CI)
+   - cd ios && pod install && cd ..
+   - faleyna.xcworkspace ile açın, Signing & Capabilities’te ekibinizi seçin.
+   - "Sign In with Apple" yeteneği: faleyna.entitlements ile uyumlu olmalı
+     (Xcode bazen capability’yi otomatik ekler).
+
+5) RevenueCat
+   - App.tsx içinde REVENUECAT_IOS_PUBLIC_KEY değerini doldurun (appl_...).
+
+6) Sürüm
+   - Android ile hizalı: MARKETING_VERSION 1.1.38, CURRENT_PROJECT_VERSION 68
+     (project.pbxproj; App Store her yüklemede build numarasını artırmanız gerekir).
+
+7) Mağaza
+   - App Store Connect kaydı, ekran görüntüleri, gizlilik URL’leri, ATT metni (Info.plist’te mevcut).
+
+Not: GoogleService-Info.plist yokken native tarafta Firebase.configure çağrılmaz;
+push ve Firebase modülleri iOS’ta tam çalışması için bu dosya şarttır.

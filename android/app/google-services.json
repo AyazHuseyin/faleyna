@@ -1,0 +1,63 @@
+{
+  "project_info": {
+    "project_number": "801149389128",
+    "project_id": "faleyna-9ba84",
+    "storage_bucket": "faleyna-9ba84.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:801149389128:android:7d5f0ecaabfbc2c322cb7d",
+        "android_client_info": {
+          "package_name": "com.faleyna"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "801149389128-mu1b7lhvc11s2o1ddpi4i4eqvseiktbj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.faleyna",
+            "certificate_hash": "db00dc100c3677b369501d635210f78f6f717f63"
+          }
+        },
+        {
+          "client_id": "801149389128-p22chiae61ohkcojn15o9ubintdb1uf3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.faleyna",
+            "certificate_hash": "5a966dc6a98156ad3c808350b7573e668582d073"
+          }
+        },
+        {
+          "client_id": "801149389128-sgbau96trtrlvb1rk85i6mo0vc3nnurd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.faleyna",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "801149389128-4rqjimogbrpcd42hhn2lvekpunl7duou.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCaAMjQp-TLZ33-jw6QKPXLwT72UluJ6s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "801149389128-4rqjimogbrpcd42hhn2lvekpunl7duou.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
