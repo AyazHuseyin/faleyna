@@ -53,8 +53,10 @@ jobs:
           echo "NODE_BINARY=$NODE_BINARY"
           node -v
           xcodebuild -version
-          # -jobs 1: GHA'da paralel derleme bellek/OOM azaltır
-          # Not: Xcode 16.x bazı sürümlerde -parallelizeTargets NO "Unknown build action 'NO'" üretiyor; kullanma.
+          LOG="${RUNNER_TEMP}/xcodebuild.log"
+          ERR="${RUNNER_TEMP}/xcode-errors.txt"
+          # GHA bash -e: pipefail ile xcodebuild kırılınca sonraki satırlar çalışmaz; önce +e ile çıkış kodunu yakala
+          set +e
           xcodebuild \
             -workspace ios/faleyna.xcworkspace \
             -scheme faleyna \
@@ -66,25 +68,28 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             COMPILER_INDEX_STORE_ENABLE=NO \
-            build 2>&1 | tee "$RUNNER_TEMP/xcodebuild.log"
-
-      - name: Xcode hata özeti (log sonu)
-        if: failure()
-        run: |
-          LOG="${RUNNER_TEMP}/xcodebuild.log"
-          if [ -f "$LOG" ]; then
-            echo "========== Son 200 satır =========="
-            tail -n 200 "$LOG"
-            echo "========== error: / BUILD FAILED satırları =========="
-            grep -E "error: |fatal error:|undefined|BUILD FAILED|Command .* failed" "$LOG" | tail -n 80 || true
+            build 2>&1 | tee "$LOG"
+          XCODE_EXIT=${PIPESTATUS[0]}
+          set -e
+          echo ""
+          echo "========== xcodebuild çıkış: $XCODE_EXIT (log: $LOG) =========="
+          grep -E "error: |fatal error:|BUILD FAILED|The following build commands failed|Undefined symbols|clang: error|ld: |Swift Compiler Error|SwiftEmitModule failed|nonzero exit code|INTERNAL ERROR" "$LOG" 2>/dev/null | tail -n 150 > "$ERR" || true
+          if [ -s "$ERR" ]; then
+            echo "========== Hata satırları (grep) =========="
+            cat "$ERR"
           else
-            echo "xcodebuild.log bulunamadı"
+            echo "(grep ile eşleşen hata satırı yok — aşağıda log sonu)"
           fi
+          echo "========== Log sonu 100 satır =========="
+          tail -n 100 "$LOG"
+          exit "$XCODE_EXIT"
 
-      - name: Upload Xcode log on failure
+      - name: Upload Xcode logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: xcodebuild-log
-          path: ${{ runner.temp }}/xcodebuild.log
+          name: xcodebuild-logs
+          path: |
+            ${{ runner.temp }}/xcodebuild.log
+            ${{ runner.temp }}/xcode-errors.txt
           if-no-files-found: ignore
