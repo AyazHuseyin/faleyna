@@ -53,7 +53,8 @@ jobs:
           echo "NODE_BINARY=$NODE_BINARY"
           node -v
           xcodebuild -version
-          # -jobs 1 + parallelizeTargets NO: GHA runner'da OOM / kesilen log azalır
+          # -jobs 1: GHA'da paralel derleme bellek/OOM azaltır
+          # Not: Xcode 16.x bazı sürümlerde -parallelizeTargets NO "Unknown build action 'NO'" üretiyor; kullanma.
           xcodebuild \
             -workspace ios/faleyna.xcworkspace \
             -scheme faleyna \
@@ -61,7 +62,6 @@ jobs:
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
-            -parallelizeTargets NO \
             -jobs 1 \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
