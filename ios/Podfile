@@ -5,6 +5,10 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
+# @react-native-firebase: Swift pod'lar (FirebaseCoreInternal) + statik link için GoogleUtilities module map
+# https://rnfirebase.io/#altering-cocoapods-to-use-frameworks
+$RNFirebaseAsStaticFramework = true
+
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
@@ -16,6 +20,9 @@ end
 
 target 'faleyna' do
   config = use_native_modules!
+
+  # FirebaseCoreInternal (Swift) → GoogleUtilities module map (statik lib)
+  pod 'GoogleUtilities', :modular_headers => true
 
   use_react_native!(
     :path => config[:reactNativePath],
