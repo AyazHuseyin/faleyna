@@ -1,6 +1,5 @@
 # iOS: GitHub Actions (macOS runner)
-# - Her push/PR'da simülatör derlemesi (imza gerektirmez, CI doğrulaması)
-# - Gerçek .ipa / TestFlight için ayrıca Apple sertifikası + profil veya App Store Connect API gerekir
+# Simülatör derlemesi — imza yok (CI doğrulaması)
 
 name: iOS
 
@@ -18,8 +17,8 @@ concurrency:
 jobs:
   build-simulator:
     name: Xcode build (iOS Simulator)
-    runs-on: macos-14
-    timeout-minutes: 60
+    runs-on: macos-15
+    timeout-minutes: 90
 
     steps:
       - name: Checkout
@@ -28,25 +27,29 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Install Ruby gems (CocoaPods)
-        run: |
-          gem install bundler
-          bundle install
+      # Gemfile + bundle exec bazen GHA Ruby ile uyumsuz kalıyor; doğrudan CocoaPods kullan
+      - name: Install CocoaPods
+        run: sudo gem install cocoapods -N
 
       - name: Pod install
         working-directory: ios
-        run: bundle exec pod install
+        run: pod install
         env:
           LANG: en_US.UTF-8
 
       - name: Xcode build (Simulator, no code signing)
         run: |
+          set -o pipefail
+          export NODE_BINARY="$(command -v node)"
+          echo "NODE_BINARY=$NODE_BINARY"
+          node -v
+          xcodebuild -version
           xcodebuild \
             -workspace ios/faleyna.xcworkspace \
             -scheme faleyna \
@@ -55,5 +58,14 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
             COMPILER_INDEX_STORE_ENABLE=NO \
-            build
+            build 2>&1 | tee "$RUNNER_TEMP/xcodebuild.log"
+
+      - name: Upload Xcode log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: ${{ runner.temp }}/xcodebuild.log
+          if-no-files-found: ignore
