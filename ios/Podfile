@@ -9,6 +9,10 @@ require Pod::Executable.execute_command('node', ['-p',
 # https://rnfirebase.io/#altering-cocoapods-to-use-frameworks
 $RNFirebaseAsStaticFramework = true
 
+# Android'deki son newArchEnabled=false ile hizalı. RN iOS varsayılanı yeni mimari açık; Fabric/codegen
+# GitHub Actions / Xcode 16'da sık kırılıyor. Açmak için: RCT_NEW_ARCH_ENABLED=1 pod install
+ENV['RCT_NEW_ARCH_ENABLED'] ||= '0'
+
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 

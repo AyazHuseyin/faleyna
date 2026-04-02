@@ -46,6 +46,7 @@ jobs:
       - name: Xcode build (Simulator, no code signing)
         env:
           RCT_NO_LAUNCH_PACKAGER: '1'
+          RCT_NEW_ARCH_ENABLED: '0'
           NODE_OPTIONS: '--max-old-space-size=6144'
         run: |
           set -o pipefail
@@ -68,6 +69,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             COMPILER_INDEX_STORE_ENABLE=NO \
+            ENABLE_USER_SCRIPT_SANDBOXING=NO \
             build 2>&1 | tee "$LOG"
           XCODE_EXIT=${PIPESTATUS[0]}
           set -e
