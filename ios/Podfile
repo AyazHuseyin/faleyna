@@ -38,5 +38,15 @@ target 'faleyna' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # Xcode 16+: bazı pod'lar 9.0/10.0 bırakıyor; uyarı ve link sorunlarını azaltır
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |cfg|
+        t = cfg.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+        if t.nil? || t.to_f < 12.0
+          cfg.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+        end
+      end
+    end
   end
 end
