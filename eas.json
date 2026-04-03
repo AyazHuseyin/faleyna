@@ -15,7 +15,7 @@
       "autoIncrement": true,
       "node": "20.18.1",
       "cache": {
-        "key": "ios-pods-rct-new-arch-0-v2"
+        "key": "ios-pods-rendererdebug-headers-v3"
       },
       "env": {
         "NODE_OPTIONS": "--max-old-space-size=8192",

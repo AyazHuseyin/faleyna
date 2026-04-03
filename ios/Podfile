@@ -43,6 +43,19 @@ target 'faleyna' do
       # :ccache_enabled => true
     )
 
+    # use_frameworks! :static + Release: React-rendererdebug bazen ReactCommon kökünü bulamaz
+    # (EAS: DebugStringConvertibleItem.cpp → 'react/renderer/debug/DebugStringConvertible.h' not found)
+    rn_root = File.expand_path(config[:reactNativePath], Pod::Config.instance.installation_root)
+    react_common = File.join(rn_root, 'ReactCommon')
+    installer.pods_project.targets.each do |target|
+      next unless target.name == 'React-rendererdebug'
+
+      target.build_configurations.each do |cfg|
+        inherited = cfg.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
+        cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{inherited} \"#{react_common}\""
+      end
+    end
+
     # Xcode 16+: bazı pod'lar 9.0/10.0 bırakıyor; uyarı ve link sorunlarını azaltır
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |cfg|
