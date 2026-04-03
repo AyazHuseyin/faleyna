@@ -59,9 +59,9 @@
 		<string>arm64</string>
 	</array>
 
-	<!-- AdMob uygulama kimliği -->
+	<!-- AdMob iOS uygulama kimliği (faleyna) -->
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-9439925710580612</string>
+	<string>ca-app-pub-9439925710580612~8024099980</string>
 
 	<!-- App Tracking Transparency izni -->
 	<key>NSUserTrackingUsageDescription</key>

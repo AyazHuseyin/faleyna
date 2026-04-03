@@ -9,7 +9,6 @@ import {
   View,
   AppState,
   AppStateStatus,
-  Platform,
 } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -79,17 +78,25 @@ LogBox.ignoreLogs([
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const navTheme = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: 'transparent' } };
 
-/** RevenueCat → Project → API keys → Apple App Store (public key, appl_...) */
-const REVENUECAT_IOS_PUBLIC_KEY = '';
+/**
+ * RevenueCat — iOS (Apple App Store) public API key (`appl_...`).
+ * Panel: Project → API keys → Apple App Store → Public API key
+ *
+ * Dokümantasyon:
+ * - https://www.revenuecat.com/docs/getting-started/installation/ios
+ * - https://www.revenuecat.com/docs/configuring-the-sdk
+ * - Mağaza bağlama: https://www.revenuecat.com/docs/welcome/connecting-stores
+ *
+ * Anahtarı buraya yapıştır (tırnak içinde). Boş bırakılırsa Purchases.configure çalışmaz.
+ */
+const REVENUECAT_IOS_PUBLIC_KEY = 'appl_GpwSIgLzJAzviVwWJWPIWUhRMbD';
 
 function App() {
-  // RevenueCat init
+  // RevenueCat (yalnızca bu projede Apple / App Store public key)
   React.useEffect(() => {
     Purchases.setLogHandler(() => {});
     Purchases.setLogLevel(LOG_LEVEL.ERROR);
-    if (Platform.OS === 'android') {
-      Purchases.configure({ apiKey: 'goog_YEXomWGcMHiRxnQFVrQBOWrkPby' });
-    } else if (REVENUECAT_IOS_PUBLIC_KEY) {
+    if (REVENUECAT_IOS_PUBLIC_KEY) {
       Purchases.configure({ apiKey: REVENUECAT_IOS_PUBLIC_KEY });
     }
   }, []);

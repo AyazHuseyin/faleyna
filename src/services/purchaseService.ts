@@ -12,6 +12,7 @@ export type PurchaseResultDto = {
   message: string;
 };
 
+/** Bu repoda satın alma onayı: revenuecat (BalanceScreen) */
 export type ConfirmPurchasePayload = {
   productId: string;
   transactionId: string;
@@ -26,7 +27,7 @@ export type ConfirmPurchasePayload = {
  * Body (PascalCase): { ProductId, TransactionId, Provider, RawPayload, Amount, Price }
  */
 export async function confirmPurchase(payload: ConfirmPurchasePayload) {
-  const provider = payload.provider ?? 'google_play';
+  const provider = payload.provider ?? 'revenuecat';
 
   const body: any = {
     ProductId: payload.productId,

@@ -26,7 +26,11 @@ import Purchases, { PURCHASE_TYPE, PRODUCT_CATEGORY } from 'react-native-purchas
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type PurchasePackage = { label: string; price: string; productId: string };
 
-const ANDROID_SKUS = [
+/**
+ * App Store Connect ürün kimlikleri (RevenueCat ile eşle):
+ * https://www.revenuecat.com/docs/offerings/products-overview
+ */
+const STORE_SKUS = [
   'purchase_50',
   'purchase_101',
   'purchase_250',
@@ -34,7 +38,7 @@ const ANDROID_SKUS = [
   'purchase_1000',
 ] as const;
 
-const CREDIT_BY_SKU: Record<(typeof ANDROID_SKUS)[number], number> = {
+const CREDIT_BY_SKU: Record<(typeof STORE_SKUS)[number], number> = {
   purchase_50: 50,
   purchase_101: 100,
   purchase_250: 250,
@@ -106,7 +110,7 @@ export default function BalanceScreen() {
           (PRODUCT_CATEGORY as any)?.NON_SUBS ??
           undefined;
 
-        const prods = await Purchases.getProducts([...ANDROID_SKUS], INAPP_ANY);
+        const prods = await Purchases.getProducts([...STORE_SKUS], INAPP_ANY);
         const map: Record<string, any> = {};
         prods.forEach((p: any) => { map[p.identifier] = p; });
         setStoreProducts(map);
@@ -257,7 +261,7 @@ export default function BalanceScreen() {
       const confirmRes = await confirmPurchaseApi({
         productId: sku,
         transactionId,
-        provider: 'google_play',
+        provider: 'revenuecat',
         rawPayload: raw,
         amount: coins,        // coin adedi
         price: priceNumber,   // fiyat (para)

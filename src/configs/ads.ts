@@ -1,4 +1,5 @@
 // src/config/ads.ts
+// AdMob — sadece bu iOS projesi. Android ayrı klasörde; oradaki ID’ler buraya dokunmaz.
 import mobileAds, {
   MaxAdContentRating,
   RequestOptions,
@@ -6,15 +7,12 @@ import mobileAds, {
 } from 'react-native-google-mobile-ads';
 import { ConsentResult, requestConsent } from '../services/consent';
 
-// 🔹 Ad Unit ID'leri
+// AdMob → faleyna (iOS) → Reklam birimleri
 export const AdUnitIds = {
-  // ✅ Aktif - Production ID'leri
-  rewarded:     'ca-app-pub-9439925710580612/4787122277', // ✅ Rewarded (Balance + Daily Card)
-  banner:       'ca-app-pub-9439925710580612/2194965569', // ✅ Banner (Home Screen)
-  interstitial: 'ca-app-pub-9439925710580612/4100726566', // ✅ Interstitial (History Detail)
-  
-  // ⚠️ Pasif
-  appOpen:      '', // App Open kaldırıldı
+  rewarded: 'ca-app-pub-9439925710580612/2356199703', // Ametis kazan (ödüllü)
+  banner: 'ca-app-pub-9439925710580612/2965562030', // home banner
+  interstitial: 'ca-app-pub-9439925710580612/7744257751', // history açılış (geçiş)
+  appOpen: 'ca-app-pub-9439925710580612/8067691383', // start (uygulama açılışı)
 };
 
 // Consent-aware ads initialization
