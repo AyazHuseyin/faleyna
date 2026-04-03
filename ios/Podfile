@@ -5,6 +5,9 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
+# Expo (EAS): ExpoModulesCore pod + autolinking — https://docs.expo.dev/bare/installing-expo-modules/
+require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
+
 # firebase-ios-sdk v9+ / RN Firebase: statik framework + use_frameworks (modül haritası için zorunlu)
 # https://rnfirebase.io/#altering-cocoapods-to-use-frameworks
 $RNFirebaseAsStaticFramework = true
@@ -17,6 +20,8 @@ platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
 target 'faleyna' do
+  use_expo_modules!
+
   config = use_native_modules!
 
   # RN Firebase / firebase-ios-sdk: aksi halde "Module 'FirebaseCore' not found" (ör. FirebaseInstallations)
