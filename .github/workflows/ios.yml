@@ -27,7 +27,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          # EAS production ile aynı (eas.json node: 20.18.1)
+          node-version: '20.18.1'
           cache: 'npm'
 
       - name: Install npm dependencies
@@ -42,6 +43,7 @@ jobs:
         run: pod install
         env:
           LANG: en_US.UTF-8
+          RCT_NEW_ARCH_ENABLED: '0'
 
       - name: Xcode build (Simulator, no code signing)
         env:

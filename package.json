@@ -8,7 +8,9 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
-    "postinstall": "patch-package"
+    "postinstall": "npx patch-package",
+    "eas:verify-bundle": "expo export:embed --eager --platform ios --dev false",
+    "eas:build:ios": "eas build --platform ios --profile production"
   },
   "dependencies": {
     "@invertase/react-native-apple-authentication": "^2.5.1",
@@ -24,6 +26,7 @@
     "@react-navigation/native": "^7.1.17",
     "@react-navigation/native-stack": "^7.3.25",
     "axios": "^1.11.0",
+    "babel-preset-expo": "~55.0.8",
     "buffer": "^6.0.3",
     "expo": "^55.0.11",
     "lottie-react-native": "^7.3.2",
@@ -47,7 +50,7 @@
     "react-native-view-shot": "^4.0.3"
   },
   "devDependencies": {
-    "@babel/core": "^7.25.2",
+    "@babel/core": "7.28.3",
     "@babel/preset-env": "^7.25.3",
     "@babel/runtime": "^7.25.0",
     "@react-native-community/cli": "20.0.0",
@@ -61,6 +64,7 @@
     "@types/react": "^19.1.0",
     "@types/react-native-vector-icons": "^6.4.18",
     "@types/react-test-renderer": "^19.1.0",
+    "eas-cli": "^18.5.0",
     "eslint": "^8.19.0",
     "jest": "^29.6.3",
     "patch-package": "^8.0.0",
