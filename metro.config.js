@@ -1,16 +1,10 @@
-// metro.config.js
-const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
+// metro.config.js — EAS / expo export için expo/metro-config gerekli (Serializer formatı)
+const { getDefaultConfig } = require('expo/metro-config');
 
-const defaultConfig = getDefaultConfig(__dirname);
-const { assetExts, sourceExts } = defaultConfig.resolver;
+const config = getDefaultConfig(__dirname);
+const { assetExts, sourceExts } = config.resolver;
 
-const config = {
-  resolver: {
-    // WEBP mutlaka asset olsun
-    assetExts: Array.from(new Set([...assetExts, 'webp'])),
-    // Yanlışlıkla sourceExts'e düşmüşse çıkar
-    sourceExts: sourceExts.filter((ext) => ext !== 'webp'),
-  },
-};
+config.resolver.assetExts = Array.from(new Set([...assetExts, 'webp']));
+config.resolver.sourceExts = sourceExts.filter((ext) => ext !== 'webp');
 
-module.exports = mergeConfig(defaultConfig, config);
+module.exports = config;
