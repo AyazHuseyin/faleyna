@@ -59,6 +59,20 @@ target 'faleyna' do
       end
     end
 
+    # Expo static frameworks: <ReactCommon/RuntimeExecutor.h> dosyası
+    # node_modules/react-native/ReactCommon/runtimeexecutor/ReactCommon/RuntimeExecutor.h
+    runtimeexecutor = File.join(rn_root, 'ReactCommon', 'runtimeexecutor')
+    %w[ExpoModulesJSI ExpoModulesCore].each do |expo_target_name|
+      installer.pods_project.targets.each do |target|
+        next unless target.name == expo_target_name
+
+        target.build_configurations.each do |cfg|
+          inherited = cfg.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
+          cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{inherited} \"#{runtimeexecutor}\""
+        end
+      end
+    end
+
     # Xcode 16+: bazı pod'lar 9.0/10.0 bırakıyor; uyarı ve link sorunlarını azaltır
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |cfg|
