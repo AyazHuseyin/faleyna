@@ -1,0 +1,13 @@
+diff --git a/node_modules/react-native/ReactCommon/react/renderer/debug/DebugStringConvertibleItem.h b/node_modules/react-native/ReactCommon/react/renderer/debug/DebugStringConvertibleItem.h
+index bd200e2..6b1010c 100644
+--- a/node_modules/react-native/ReactCommon/react/renderer/debug/DebugStringConvertibleItem.h
++++ b/node_modules/react-native/ReactCommon/react/renderer/debug/DebugStringConvertibleItem.h
+@@ -9,7 +9,7 @@
+ 
+ #include <string>
+ 
+-#include <react/renderer/debug/DebugStringConvertible.h>
++#include "DebugStringConvertible.h"
+ 
+ namespace facebook::react {
+ 
