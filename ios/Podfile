@@ -59,9 +59,11 @@ target 'faleyna' do
       end
     end
 
-    # Expo + use_frameworks static: <ReactCommon/*.h> kökleri ReactCommon alt klasörlerinde
-    # (örn. callinvoker/ReactCommon/CallInvoker.h, runtimeexecutor/ReactCommon/RuntimeExecutor.h)
+    # Expo + use_frameworks static:
+    # - <react/renderer/...> → kök ReactCommon (örn. RuntimeSchedulerCallInvoker.h)
+    # - <ReactCommon/CallInvoker.h> → callinvoker, runtimeexecutor, nativemodule/core
     expo_rn_reactcommon_roots = [
+      react_common,
       File.join(rn_root, 'ReactCommon', 'callinvoker'),
       File.join(rn_root, 'ReactCommon', 'runtimeexecutor'),
       File.join(rn_root, 'ReactCommon', 'react', 'nativemodule', 'core'),
