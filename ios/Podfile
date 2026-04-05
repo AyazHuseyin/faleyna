@@ -59,16 +59,21 @@ target 'faleyna' do
       end
     end
 
-    # Expo static frameworks: <ReactCommon/RuntimeExecutor.h> dosyası
-    # node_modules/react-native/ReactCommon/runtimeexecutor/ReactCommon/RuntimeExecutor.h
-    runtimeexecutor = File.join(rn_root, 'ReactCommon', 'runtimeexecutor')
+    # Expo + use_frameworks static: <ReactCommon/*.h> kökleri ReactCommon alt klasörlerinde
+    # (örn. callinvoker/ReactCommon/CallInvoker.h, runtimeexecutor/ReactCommon/RuntimeExecutor.h)
+    expo_rn_reactcommon_roots = [
+      File.join(rn_root, 'ReactCommon', 'callinvoker'),
+      File.join(rn_root, 'ReactCommon', 'runtimeexecutor'),
+      File.join(rn_root, 'ReactCommon', 'react', 'nativemodule', 'core'),
+    ]
+    expo_headers = expo_rn_reactcommon_roots.map { |p| "\"#{p}\"" }.join(' ')
     %w[ExpoModulesJSI ExpoModulesCore].each do |expo_target_name|
       installer.pods_project.targets.each do |target|
         next unless target.name == expo_target_name
 
         target.build_configurations.each do |cfg|
           inherited = cfg.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
-          cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{inherited} \"#{runtimeexecutor}\""
+          cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{inherited} #{expo_headers}"
         end
       end
     end
