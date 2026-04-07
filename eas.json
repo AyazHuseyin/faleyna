@@ -15,7 +15,7 @@
       "autoIncrement": true,
       "node": "20.18.1",
       "cache": {
-        "key": "ios-expo-reactcommon-root-v8"
+        "key": "ios-expo-hermes-headers-v9"
       },
       "env": {
         "NODE_OPTIONS": "--max-old-space-size=8192",

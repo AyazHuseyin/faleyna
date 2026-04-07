@@ -68,7 +68,9 @@ target 'faleyna' do
       File.join(rn_root, 'ReactCommon', 'runtimeexecutor'),
       File.join(rn_root, 'ReactCommon', 'react', 'nativemodule', 'core'),
     ]
-    expo_headers = expo_rn_reactcommon_roots.map { |p| "\"#{p}\"" }.join(' ')
+    # Hermes: <hermes/hermes.h> → hermes-engine pod destroot/include (React-hermes.podspec ile aynı kök)
+    hermes_headers = '$(PODS_ROOT)/hermes-engine/destroot/include'
+    expo_headers = [expo_rn_reactcommon_roots.map { |p| "\"#{p}\"" }.join(' '), hermes_headers].join(' ')
     %w[ExpoModulesJSI ExpoModulesCore].each do |expo_target_name|
       installer.pods_project.targets.each do |target|
         next unless target.name == expo_target_name
