@@ -92,6 +92,21 @@ target 'faleyna' do
       end
     end
 
+    # RCT-Folly: <folly/dynamic.h> bulunamıyor hatası (ReactCommon/renderer core derlenirken).
+    # use_frameworks! :static altında folly başlıkları framework/pod kökünden gelmeli.
+    folly_headers = [
+      '$(PODS_ROOT)/RCT-Folly',
+      '"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/folly.framework/Headers"',
+    ].join(' ')
+    installer.pods_project.targets.each do |target|
+      next unless target.name.start_with?('React-') || target.name == 'ReactCommon' || target.name == 'RCT-Folly'
+
+      target.build_configurations.each do |cfg|
+        inherited = cfg.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
+        cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{inherited} #{folly_headers}"
+      end
+    end
+
     # Xcode 16+: bazı pod'lar 9.0/10.0 bırakıyor; uyarı ve link sorunlarını azaltır
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |cfg|
