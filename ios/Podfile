@@ -92,6 +92,23 @@ target 'faleyna' do
       end
     end
 
+    # RCT-Folly: RawProps.h → <folly/dynamic.h> (use_frameworks static).
+    # Sadece EKLE: $(inherited) + podspec yolları silinmesin. jsinspector* hedeflerine dokunma (kendi ../.. yolu var).
+    folly_extra = '$(PODS_ROOT)/RCT-Folly "${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/folly.framework/Headers"'
+    installer.pods_project.targets.each do |target|
+      next if target.name.include?('jsinspector')
+      next unless target.name.start_with?('React-') || target.name == 'RCT-Folly'
+
+      target.build_configurations.each do |cfg|
+        existing = cfg.build_settings['HEADER_SEARCH_PATHS']
+        existing = existing ? existing.to_s : '$(inherited)'
+        existing = "$(inherited) #{existing}" unless existing.include?('$(inherited)')
+        next if existing.include?('RCT-Folly')
+
+        cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{existing} #{folly_extra}"
+      end
+    end
+
     # Xcode 16+: bazı pod'lar 9.0/10.0 bırakıyor; uyarı ve link sorunlarını azaltır
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |cfg|
