@@ -103,7 +103,8 @@ target 'faleyna' do
         existing = cfg.build_settings['HEADER_SEARCH_PATHS']
         existing = existing ? existing.to_s : '$(inherited)'
         existing = "$(inherited) #{existing}" unless existing.include?('$(inherited)')
-        next if existing.include?('RCT-Folly')
+        # Sadece tam kök varsa atla (yanlış/boş RCT-Folly eşleşmesinde yine ekle)
+        next if existing.include?('$(PODS_ROOT)/RCT-Folly')
 
         cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{existing} #{folly_extra}"
       end
