@@ -45,10 +45,8 @@ target 'faleyna' do
 
     # Xcode 16 / Swift 6: Expo SDK 55 pods can fail under strict concurrency checks
     # with errors like "unknown attribute 'MainActor'" / Sendable / actor-isolated violations.
-    # Keep builds unblocked by compiling ExpoModules* pods with Swift 5.9 semantics and minimal strict concurrency.
+    # Force Pods project to compile Swift in 5.9 language mode and with minimal strict concurrency.
     installer.pods_project.targets.each do |target|
-      next unless target.name.start_with?('ExpoModules') || target.name.start_with?('EX')
-
       target.build_configurations.each do |cfg|
         cfg.build_settings['SWIFT_VERSION'] = '5.9'
         cfg.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
