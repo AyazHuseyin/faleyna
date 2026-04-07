@@ -15,7 +15,7 @@
       "autoIncrement": true,
       "node": "20.18.1",
       "cache": {
-        "key": "ios-expo-swift59-minimal-concurrency-v11"
+        "key": "ios-expo-mainactor-syntax-patch-v12"
       },
       "env": {
         "NODE_OPTIONS": "--max-old-space-size=8192",
