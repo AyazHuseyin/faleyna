@@ -107,6 +107,21 @@ target 'faleyna' do
       end
     end
 
+    # jsinspector-modern headers: <jsinspector-modern/...> bulunamıyor hatası
+    # (örn. ProfileTreeNode.h → RuntimeSamplingProfile.h).
+    jsinspector_headers = [
+      '"${PODS_CONFIGURATION_BUILD_DIR}/React-jsinspectortracing/jsinspector_moderntracing.framework/Headers"',
+      '"${PODS_CONFIGURATION_BUILD_DIR}/React-jsinspectorcdp/jsinspector_moderncdp.framework/Headers"',
+    ].join(' ')
+    installer.pods_project.targets.each do |target|
+      next unless target.name.start_with?('React-') || target.name == 'ReactCommon'
+
+      target.build_configurations.each do |cfg|
+        inherited = cfg.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
+        cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{inherited} #{jsinspector_headers}"
+      end
+    end
+
     # Xcode 16+: bazı pod'lar 9.0/10.0 bırakıyor; uyarı ve link sorunlarını azaltır
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |cfg|
