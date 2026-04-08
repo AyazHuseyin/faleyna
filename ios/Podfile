@@ -46,7 +46,8 @@ target 'faleyna' do
     folly_sandbox = File.join(installer.sandbox.root, 'RCT-Folly')
     folly_framework_headers = '"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/folly.framework/Headers"'
     reactcommon_framework_headers = '"${PODS_CONFIGURATION_BUILD_DIR}/ReactCommon/ReactCommon.framework/Headers"'
-    runtimeexecutor_headers = "\"#{File.join(react_common, 'runtimeexecutor', 'ReactCommon')}\""
+    runtimeexecutor_root = "\"#{File.join(react_common, 'runtimeexecutor')}\""
+    runtimeexecutor_sub = "\"#{File.join(react_common, 'runtimeexecutor', 'ReactCommon')}\""
     boost_headers = '$(PODS_ROOT)/boost'
     double_conversion_headers = '$(PODS_ROOT)/DoubleConversion'
     fmt_headers = '$(PODS_ROOT)/fmt/include'
@@ -58,7 +59,8 @@ target 'faleyna' do
       "\"#{File.join(react_common, 'react', 'debug')}\"",
       "\"#{File.join(react_common, 'react', 'renderer')}\"",
       "\"#{react_featureflags}\"",
-      runtimeexecutor_headers,
+      runtimeexecutor_root,
+      runtimeexecutor_sub,
       reactcommon_framework_headers
     ].join(' ')
     additional_third_party_headers = [
@@ -82,7 +84,7 @@ target 'faleyna' do
         cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{headers} #{additional_common_headers} #{additional_third_party_headers}"
         oc = cfg.build_settings['OTHER_CFLAGS'] || '$(inherited)'
         cfg.build_settings['OTHER_CFLAGS'] =
-          "#{oc} -isystem \"#{folly_sandbox}\" -isystem $(PODS_ROOT)/RCT-Folly -isystem #{boost_headers} -isystem #{double_conversion_headers} -isystem #{fmt_headers} -isystem \"#{File.join(react_common, 'callinvoker')}\" -isystem \"#{File.join(react_common, 'callinvoker', 'ReactCommon')}\" -isystem #{runtimeexecutor_headers}"
+          "#{oc} -isystem \"#{folly_sandbox}\" -isystem $(PODS_ROOT)/RCT-Folly -isystem #{boost_headers} -isystem #{double_conversion_headers} -isystem #{fmt_headers} -isystem \"#{File.join(react_common, 'callinvoker')}\" -isystem \"#{File.join(react_common, 'callinvoker', 'ReactCommon')}\" -isystem #{runtimeexecutor_root} -isystem #{runtimeexecutor_sub}"
         unless cfg.build_settings['HEADER_SEARCH_PATHS'].to_s.include?(react_featureflags)
           cfg.build_settings['HEADER_SEARCH_PATHS'] =
             "#{cfg.build_settings['HEADER_SEARCH_PATHS']} \"#{react_featureflags}\""
