@@ -92,10 +92,10 @@ target 'faleyna' do
         ].join(' ')
         target.build_configurations.each do |cfg|
           cfg.build_settings['HEADER_SEARCH_PATHS'] =
-            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} #{jsinspector_headers} $(PODS_ROOT)/RCT-Folly \"#{folly_sandbox}\" \"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/folly.framework/Headers\" $(PODS_ROOT)/boost"
+            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} #{jsinspector_headers} $(PODS_ROOT)/RCT-Folly \"#{folly_sandbox}\" \"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/folly.framework/Headers\" $(PODS_ROOT)/boost $(PODS_ROOT)/DoubleConversion"
           other_cflags = cfg.build_settings['OTHER_CFLAGS'] || '$(inherited)'
           cfg.build_settings['OTHER_CFLAGS'] =
-            "#{other_cflags} -isystem \"#{folly_sandbox}\" -isystem \"$(PODS_ROOT)/RCT-Folly\" -isystem \"$(PODS_ROOT)/boost\""
+            "#{other_cflags} -isystem \"#{folly_sandbox}\" -isystem \"$(PODS_ROOT)/RCT-Folly\" -isystem \"$(PODS_ROOT)/boost\" -isystem \"$(PODS_ROOT)/DoubleConversion\""
         end
       else
         target.build_configurations.each do |cfg|
