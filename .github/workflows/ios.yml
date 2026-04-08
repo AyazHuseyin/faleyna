@@ -46,7 +46,7 @@ jobs:
       - name: Pod install
         working-directory: ios
         run: |
-          pod install --deployment
+          pod install
         env:
           LANG: en_US.UTF-8
           RCT_NEW_ARCH_ENABLED: '0'
