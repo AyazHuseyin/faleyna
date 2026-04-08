@@ -17,7 +17,7 @@ $RNFirebaseAsStaticFramework = true
 # Keep classic architecture; Expo build env might force 1, so pin it here
 ENV['RCT_NEW_ARCH_ENABLED'] = '0'
 
-platform :ios, '13.4'
+platform :ios, '14.0'
 prepare_react_native_project!
 
 target 'faleyna' do
@@ -48,7 +48,7 @@ target 'faleyna' do
       target.build_configurations.each do |cfg|
         cfg.build_settings['SWIFT_VERSION'] = '5.9'
         cfg.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
-        cfg.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.4'
+        cfg.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '14.0'
 
         headers = cfg.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
         headers = headers.to_s
