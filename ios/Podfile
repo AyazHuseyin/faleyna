@@ -44,6 +44,13 @@ target 'faleyna' do
     react_codegen_generated = File.join(rn_root, 'React', 'FBReactNativeSpec', 'Generated')
     hermes_headers = '$(PODS_ROOT)/hermes-engine/destroot/include'
     folly_sandbox = File.join(installer.sandbox.root, 'RCT-Folly')
+    additional_common_headers = [
+      "\"#{react_common}\"",
+      "\"#{File.join(react_common, 'react')}\"",
+      "\"#{File.join(react_common, 'react', 'debug')}\"",
+      "\"#{File.join(react_common, 'react', 'renderer')}\"",
+      "\"#{react_featureflags}\""
+    ].join(' ')
 
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |cfg|
@@ -54,7 +61,7 @@ target 'faleyna' do
         headers = cfg.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
         headers = headers.to_s
         headers = "$(inherited) #{headers}" unless headers.include?('$(inherited)')
-        cfg.build_settings['HEADER_SEARCH_PATHS'] = headers
+        cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{headers} #{additional_common_headers}"
         unless cfg.build_settings['HEADER_SEARCH_PATHS'].to_s.include?(react_featureflags)
           cfg.build_settings['HEADER_SEARCH_PATHS'] =
             "#{cfg.build_settings['HEADER_SEARCH_PATHS']} \"#{react_featureflags}\""
