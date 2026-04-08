@@ -40,6 +40,7 @@ target 'faleyna' do
 
     rn_root = File.expand_path(config[:reactNativePath], Pod::Config.instance.installation_root)
     react_common = File.join(rn_root, 'ReactCommon')
+    react_featureflags = File.join(react_common, 'react', 'featureflags')
     react_codegen_generated = File.join(rn_root, 'React', 'FBReactNativeSpec', 'Generated')
     hermes_headers = '$(PODS_ROOT)/hermes-engine/destroot/include'
     folly_sandbox = File.join(installer.sandbox.root, 'RCT-Folly')
@@ -54,6 +55,10 @@ target 'faleyna' do
         headers = headers.to_s
         headers = "$(inherited) #{headers}" unless headers.include?('$(inherited)')
         cfg.build_settings['HEADER_SEARCH_PATHS'] = headers
+        unless cfg.build_settings['HEADER_SEARCH_PATHS'].to_s.include?(react_featureflags)
+          cfg.build_settings['HEADER_SEARCH_PATHS'] =
+            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} \"#{react_featureflags}\""
+        end
 
         if %w[FirebaseCoreInternal GoogleUtilities FirebaseFirestoreInternal].include?(target.name)
           cfg.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
@@ -73,7 +78,7 @@ target 'faleyna' do
           "\"#{File.join(react_common, 'callinvoker')}\"",
           "\"#{File.join(react_common, 'runtimeexecutor')}\"",
           "\"#{File.join(react_common, 'react', 'nativemodule', 'core')}\"",
-          "\"#{File.join(react_common, 'react', 'featureflags')}\"",
+          "\"#{react_featureflags}\"",
           "\"#{react_codegen_generated}\"",
           hermes_headers
         ].join(' ')
