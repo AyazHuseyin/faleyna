@@ -73,6 +73,7 @@ target 'faleyna' do
           "\"#{File.join(react_common, 'callinvoker')}\"",
           "\"#{File.join(react_common, 'runtimeexecutor')}\"",
           "\"#{File.join(react_common, 'react', 'nativemodule', 'core')}\"",
+          "\"#{File.join(react_common, 'react', 'featureflags')}\"",
           "\"#{react_codegen_generated}\"",
           hermes_headers
         ].join(' ')
