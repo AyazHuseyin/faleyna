@@ -4,8 +4,12 @@ require Pod::Executable.execute_command(
   ['-p', 'require.resolve("react-native/scripts/react_native_pods.rb", {paths: [process.argv[1]]})', __dir__]
 ).strip
 
-# Expo autolinking for bare workflow
-require File.join(File.dirname(`node --print "require.resolve('"'"'expo/package.json'"'"')"`), 'scripts/autolinking')
+# Expo autolinking for bare workflow (resolve even when running from ios/)
+expo_autolinking_script = Pod::Executable.execute_command(
+  'node',
+  ['-p', 'require.resolve("expo/package.json", {paths: [process.argv[1], process.cwd(), process.cwd() + "/.."]})', __dir__]
+).strip
+require File.join(File.dirname(expo_autolinking_script), 'scripts/autolinking')
 
 # RN Firebase needs static frameworks when use_frameworks! is enabled
 $RNFirebaseAsStaticFramework = true
