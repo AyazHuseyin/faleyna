@@ -87,6 +87,11 @@ target 'faleyna' do
           cfg.build_settings['HEADER_SEARCH_PATHS'] =
             "#{cfg.build_settings['HEADER_SEARCH_PATHS']} #{extra_headers}"
         end
+      elsif target.name.include?('React-featureflags')
+        target.build_configurations.each do |cfg|
+          cfg.build_settings['HEADER_SEARCH_PATHS'] =
+            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} \"#{react_common}\" \"#{react_featureflags}\""
+        end
       end
 
       if target.name.include?('jsinspector')
