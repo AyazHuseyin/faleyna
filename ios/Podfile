@@ -93,6 +93,17 @@ target 'faleyna' do
           cfg.build_settings['OTHER_CFLAGS'] =
             "#{other_cflags} -isystem \"#{folly_sandbox}\" -isystem \"$(PODS_ROOT)/RCT-Folly\""
         end
+      else
+        # jsinspector-modern tracing headers under ReactCommon/jsinspector-modern
+        jsinspector_headers = [
+          "\"#{react_common}\"",
+          "\"#{File.join(react_common, 'jsinspector-modern')}\"",
+          "\"#{File.join(react_common, 'jsinspector-modern', 'tracing')}\""
+        ].join(' ')
+        target.build_configurations.each do |cfg|
+          cfg.build_settings['HEADER_SEARCH_PATHS'] =
+            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} #{jsinspector_headers}"
+        end
       end
     end
   end
