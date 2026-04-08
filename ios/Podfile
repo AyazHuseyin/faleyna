@@ -1,125 +1,93 @@
-# Resolve react_native_pods.rb with node to allow for hoisting
-require Pod::Executable.execute_command('node', ['-p',
-  'require.resolve(
-    "react-native/scripts/react_native_pods.rb",
-    {paths: [process.argv[1]]},
-  )', __dir__]).strip
+# Resolve react_native_pods.rb with node (works with hoisted node_modules)
+require Pod::Executable.execute_command(
+  'node',
+  ['-p', 'require.resolve("react-native/scripts/react_native_pods.rb", {paths: [process.argv[1]]})', __dir__]
+).strip
 
-# Expo (EAS): ExpoModulesCore pod + autolinking — https://docs.expo.dev/bare/installing-expo-modules/
-require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
+# Expo autolinking for bare workflow
+require File.join(File.dirname(`node --print "require.resolve('"'"'expo/package.json'"'"')"`), 'scripts/autolinking')
 
-# firebase-ios-sdk v9+ / RN Firebase: statik framework + use_frameworks (modül haritası için zorunlu)
-# https://rnfirebase.io/#altering-cocoapods-to-use-frameworks
+# RN Firebase needs static frameworks when use_frameworks! is enabled
 $RNFirebaseAsStaticFramework = true
 
-# Yeni mimari kapalı (Fabric + Firebase static frameworks ile EAS'te header yolu kırılmalarını önlemek için).
-# ÖNEMLİ: EAS/Expo build ortamı RCT_NEW_ARCH_ENABLED=1 verebilir; ||= buna saygı duyar ve 1 bırakır —
-# o zaman react/renderer/... başlıkları eksik kalır ('DebugStringConvertible.h' not found). Sabitle:
+# Keep classic architecture; Expo build env might force 1, so pin it here
 ENV['RCT_NEW_ARCH_ENABLED'] = '0'
 
-platform :ios, min_ios_version_supported
+platform :ios, '13.4'
 prepare_react_native_project!
 
 target 'faleyna' do
   use_expo_modules!
 
   config = use_native_modules!
-
-  # RN Firebase / firebase-ios-sdk: aksi halde "Module 'FirebaseCore' not found" (ör. FirebaseInstallations)
-  use_frameworks! :linkage => :static
+  use_frameworks! linkage: :static
 
   use_react_native!(
     :path => config[:reactNativePath],
-    # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
   post_install do |installer|
-    # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
     react_native_post_install(
       installer,
       config[:reactNativePath],
-      :mac_catalyst_enabled => false,
-      # :ccache_enabled => true
+      :mac_catalyst_enabled => false
     )
 
-    # Xcode 16 / Swift 6: Expo SDK 55 pods can fail under strict concurrency checks
-    # with errors like "unknown attribute 'MainActor'" / Sendable / actor-isolated violations.
-    # Force Pods project to compile Swift in 5.9 language mode and with minimal strict concurrency.
+    rn_root = File.expand_path(config[:reactNativePath], Pod::Config.instance.installation_root)
+    react_common = File.join(rn_root, 'ReactCommon')
+    react_codegen_generated = File.join(rn_root, 'React', 'FBReactNativeSpec', 'Generated')
+    hermes_headers = '$(PODS_ROOT)/hermes-engine/destroot/include'
+    folly_sandbox = File.join(installer.sandbox.root, 'RCT-Folly')
+
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |cfg|
         cfg.build_settings['SWIFT_VERSION'] = '5.9'
         cfg.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
+        cfg.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.4'
+
+        headers = cfg.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
+        headers = headers.to_s
+        headers = "$(inherited) #{headers}" unless headers.include?('$(inherited)')
+        cfg.build_settings['HEADER_SEARCH_PATHS'] = headers
+
+        if %w[FirebaseCoreInternal GoogleUtilities FirebaseFirestoreInternal].include?(target.name)
+          cfg.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+        end
       end
-    end
 
-    # use_frameworks! :static + Release: React-rendererdebug için ek header yolları
-    # - ReactCommon: <react/renderer/...>
-    # - DoubleConversion: DebugStringConvertible.cpp → <double-conversion/double-conversion.h>
-    #   (RN pod adı DoubleConversion; ayrıca pod 'double-conversion' eklemeyin — çakışır.)
-    rn_root = File.expand_path(config[:reactNativePath], Pod::Config.instance.installation_root)
-    react_common = File.join(rn_root, 'ReactCommon')
-    installer.pods_project.targets.each do |target|
-      next unless target.name == 'React-rendererdebug'
-
-      target.build_configurations.each do |cfg|
-        inherited = cfg.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
-        cfg.build_settings['HEADER_SEARCH_PATHS'] =
-          "#{inherited} \"#{react_common}\" $(PODS_ROOT)/DoubleConversion"
+      if target.name == 'React-rendererdebug'
+        target.build_configurations.each do |cfg|
+          cfg.build_settings['HEADER_SEARCH_PATHS'] =
+            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} \"#{react_common}\" $(PODS_ROOT)/DoubleConversion"
+        end
       end
-    end
 
-    # Expo + use_frameworks static:
-    # - <react/renderer/...> → kök ReactCommon (örn. RuntimeSchedulerCallInvoker.h)
-    # - <ReactCommon/CallInvoker.h> → callinvoker, runtimeexecutor, nativemodule/core
-    expo_rn_reactcommon_roots = [
-      react_common,
-      File.join(rn_root, 'ReactCommon', 'callinvoker'),
-      File.join(rn_root, 'ReactCommon', 'runtimeexecutor'),
-      File.join(rn_root, 'ReactCommon', 'react', 'nativemodule', 'core'),
-    ]
-    # Hermes: <hermes/hermes.h> → hermes-engine pod destroot/include (React-hermes.podspec ile aynı kök)
-    hermes_headers = '$(PODS_ROOT)/hermes-engine/destroot/include'
-    expo_headers = [expo_rn_reactcommon_roots.map { |p| "\"#{p}\"" }.join(' '), hermes_headers].join(' ')
-    %w[ExpoModulesJSI ExpoModulesCore].each do |expo_target_name|
-      installer.pods_project.targets.each do |target|
-        next unless target.name == expo_target_name
+      if %w[ExpoModulesJSI ExpoModulesCore].include?(target.name)
+        extra_headers = [
+          "\"#{react_common}\"",
+          "\"#{File.join(react_common, 'callinvoker')}\"",
+          "\"#{File.join(react_common, 'runtimeexecutor')}\"",
+          "\"#{File.join(react_common, 'react', 'nativemodule', 'core')}\"",
+          "\"#{react_codegen_generated}\"",
+          hermes_headers
+        ].join(' ')
 
         target.build_configurations.each do |cfg|
-          inherited = cfg.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
-          cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{inherited} #{expo_headers}"
+          cfg.build_settings['HEADER_SEARCH_PATHS'] =
+            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} #{extra_headers}"
         end
       end
-    end
 
-    # RCT-Folly: RawProps.h → <folly/dynamic.h> (use_frameworks static).
-    # Bazı React alt hedefleri farklı isimle geliyor; sadece React-* ile sınırlamak yetmeyebilir.
-    # jsinspector* dokunma (kendi header ağacı var).
-    folly_extra = '$(PODS_ROOT)/RCT-Folly "${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/folly.framework/Headers"'
-    installer.pods_project.targets.each do |target|
-      next if target.name.include?('jsinspector')
+      unless target.name.include?('jsinspector')
+        target.build_configurations.each do |cfg|
+          next if cfg.build_settings['HEADER_SEARCH_PATHS'].to_s.include?(folly_sandbox)
 
-      target.build_configurations.each do |cfg|
-        existing = cfg.build_settings['HEADER_SEARCH_PATHS']
-        existing = existing ? existing.to_s : '$(inherited)'
-        existing = "$(inherited) #{existing}" unless existing.include?('$(inherited)')
-        next if existing.include?('$(PODS_ROOT)/RCT-Folly')
-
-        cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{existing} #{folly_extra}"
-        # Bazı derlemeler HEADER_SEARCH_PATHS yerine OTHER_CFLAGS ile çözülür
-        oc = cfg.build_settings['OTHER_CFLAGS'] || '$(inherited)'
-        unless oc.to_s.include?('PODS_ROOT)/RCT-Folly')
-          cfg.build_settings['OTHER_CFLAGS'] = "#{oc} -isystem \"$(PODS_ROOT)/RCT-Folly\""
-        end
-      end
-    end
-
-    # Xcode 16+: bazı pod'lar 9.0/10.0 bırakıyor; uyarı ve link sorunlarını azaltır
-    installer.pods_project.targets.each do |target|
-      target.build_configurations.each do |cfg|
-        t = cfg.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
-        if t.nil? || t.to_f < 12.0
-          cfg.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+          cfg.build_settings['HEADER_SEARCH_PATHS'] =
+            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} $(PODS_ROOT)/RCT-Folly \"#{folly_sandbox}\" \"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/folly.framework/Headers\""
+          other_cflags = cfg.build_settings['OTHER_CFLAGS'] || '$(inherited)'
+          cfg.build_settings['OTHER_CFLAGS'] =
+            "#{other_cflags} -isystem \"#{folly_sandbox}\" -isystem \"$(PODS_ROOT)/RCT-Folly\""
         end
       end
     end
