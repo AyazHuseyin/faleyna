@@ -83,17 +83,7 @@ target 'faleyna' do
         end
       end
 
-      unless target.name.include?('jsinspector')
-        target.build_configurations.each do |cfg|
-          next if cfg.build_settings['HEADER_SEARCH_PATHS'].to_s.include?(folly_sandbox)
-
-          cfg.build_settings['HEADER_SEARCH_PATHS'] =
-            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} $(PODS_ROOT)/RCT-Folly \"#{folly_sandbox}\" \"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/folly.framework/Headers\""
-          other_cflags = cfg.build_settings['OTHER_CFLAGS'] || '$(inherited)'
-          cfg.build_settings['OTHER_CFLAGS'] =
-            "#{other_cflags} -isystem \"#{folly_sandbox}\" -isystem \"$(PODS_ROOT)/RCT-Folly\""
-        end
-      else
+      if target.name.include?('jsinspector')
         # jsinspector-modern tracing headers under ReactCommon/jsinspector-modern
         jsinspector_headers = [
           "\"#{react_common}\"",
@@ -102,7 +92,20 @@ target 'faleyna' do
         ].join(' ')
         target.build_configurations.each do |cfg|
           cfg.build_settings['HEADER_SEARCH_PATHS'] =
-            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} #{jsinspector_headers}"
+            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} #{jsinspector_headers} $(PODS_ROOT)/RCT-Folly \"#{folly_sandbox}\" \"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/folly.framework/Headers\""
+          other_cflags = cfg.build_settings['OTHER_CFLAGS'] || '$(inherited)'
+          cfg.build_settings['OTHER_CFLAGS'] =
+            "#{other_cflags} -isystem \"#{folly_sandbox}\" -isystem \"$(PODS_ROOT)/RCT-Folly\""
+        end
+      else
+        target.build_configurations.each do |cfg|
+          next if cfg.build_settings['HEADER_SEARCH_PATHS'].to_s.include?(folly_sandbox)
+
+          cfg.build_settings['HEADER_SEARCH_PATHS'] =
+            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} $(PODS_ROOT)/RCT-Folly \"#{folly_sandbox}\" \"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/folly.framework/Headers\""
+          other_cflags = cfg.build_settings['OTHER_CFLAGS'] || '$(inherited)'
+          cfg.build_settings['OTHER_CFLAGS'] =
+            "#{other_cflags} -isystem \"#{folly_sandbox}\" -isystem \"$(PODS_ROOT)/RCT-Folly\""
         end
       end
     end
