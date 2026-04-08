@@ -44,12 +44,24 @@ target 'faleyna' do
     react_codegen_generated = File.join(rn_root, 'React', 'FBReactNativeSpec', 'Generated')
     hermes_headers = '$(PODS_ROOT)/hermes-engine/destroot/include'
     folly_sandbox = File.join(installer.sandbox.root, 'RCT-Folly')
+    folly_framework_headers = '"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/folly.framework/Headers"'
+    boost_headers = '$(PODS_ROOT)/boost'
+    double_conversion_headers = '$(PODS_ROOT)/DoubleConversion'
+    fmt_headers = '$(PODS_ROOT)/fmt/include'
     additional_common_headers = [
       "\"#{react_common}\"",
       "\"#{File.join(react_common, 'react')}\"",
       "\"#{File.join(react_common, 'react', 'debug')}\"",
       "\"#{File.join(react_common, 'react', 'renderer')}\"",
       "\"#{react_featureflags}\""
+    ].join(' ')
+    additional_third_party_headers = [
+      '$(PODS_ROOT)/RCT-Folly',
+      "\"#{folly_sandbox}\"",
+      folly_framework_headers,
+      boost_headers,
+      double_conversion_headers,
+      fmt_headers
     ].join(' ')
 
     installer.pods_project.targets.each do |target|
@@ -61,7 +73,10 @@ target 'faleyna' do
         headers = cfg.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
         headers = headers.to_s
         headers = "$(inherited) #{headers}" unless headers.include?('$(inherited)')
-        cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{headers} #{additional_common_headers}"
+        cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{headers} #{additional_common_headers} #{additional_third_party_headers}"
+        oc = cfg.build_settings['OTHER_CFLAGS'] || '$(inherited)'
+        cfg.build_settings['OTHER_CFLAGS'] =
+          "#{oc} -isystem \"#{folly_sandbox}\" -isystem $(PODS_ROOT)/RCT-Folly -isystem #{boost_headers} -isystem #{double_conversion_headers} -isystem #{fmt_headers}"
         unless cfg.build_settings['HEADER_SEARCH_PATHS'].to_s.include?(react_featureflags)
           cfg.build_settings['HEADER_SEARCH_PATHS'] =
             "#{cfg.build_settings['HEADER_SEARCH_PATHS']} \"#{react_featureflags}\""
