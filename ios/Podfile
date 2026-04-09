@@ -4,17 +4,14 @@ require Pod::Executable.execute_command(
   ['-p', 'require.resolve("react-native/scripts/react_native_pods.rb", {paths: [process.argv[1]]})', __dir__]
 ).strip
 
-# Expo autolinking for bare workflow (resolve even when running from ios/)
+# Expo autolinking for bare workflow
 expo_autolinking_script = Pod::Executable.execute_command(
   'node',
   ['-p', 'require.resolve("expo/package.json", {paths: [process.argv[1], process.cwd(), process.cwd() + "/.."]})', __dir__]
 ).strip
 require File.join(File.dirname(expo_autolinking_script), 'scripts/autolinking')
 
-# RN Firebase needs static frameworks when use_frameworks! is enabled
 $RNFirebaseAsStaticFramework = true
-
-# Keep classic architecture; Expo build env might force 1, so pin it here
 ENV['RCT_NEW_ARCH_ENABLED'] = '0'
 
 platform :ios, '15.1'
@@ -38,180 +35,29 @@ target 'faleyna' do
       :mac_catalyst_enabled => false
     )
 
-    rn_root = File.expand_path(config[:reactNativePath], Pod::Config.instance.installation_root)
-    react_common = File.join(rn_root, 'ReactCommon')
-    react_root = File.join(rn_root, 'React')
-    react_featureflags = File.join(react_common, 'react', 'featureflags')
-    react_codegen_generated = File.join(rn_root, 'React', 'FBReactNativeSpec', 'Generated')
-    hermes_headers = '$(PODS_ROOT)/hermes-engine/destroot/include'
-    folly_sandbox = File.join(installer.sandbox.root, 'RCT-Folly')
-    folly_framework_headers = '"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/folly.framework/Headers"'
-    reactcommon_framework_headers = '"${PODS_CONFIGURATION_BUILD_DIR}/ReactCommon/ReactCommon.framework/Headers"'
-    runtimeexecutor_root = "\"#{File.join(react_common, 'runtimeexecutor')}\""
-    runtimeexecutor_sub = "\"#{File.join(react_common, 'runtimeexecutor', 'ReactCommon')}\""
-    runtimeexecutor_ios_root = "\"#{File.join(react_common, 'runtimeexecutor', 'platform', 'ios')}\""
-    turbomodule_core_root = "\"#{File.join(react_common, 'turbomodule', 'core')}\""
-    turbomodule_core_platform_ios = "\"#{File.join(react_common, 'turbomodule', 'core', 'platform', 'ios', 'ReactCommon')}\""
-    react_fabric_mounting = "\"#{File.join(react_root, 'Fabric', 'Mounting')}\""
-    react_node_modules_root = "\"#{File.expand_path('../node_modules/react-native/React', Pod::Config.instance.installation_root)}\""
-    react_node_modules_fabric = "\"#{File.expand_path('../node_modules/react-native/React/Fabric', Pod::Config.instance.installation_root)}\""
-    react_node_modules_fabric_mounting = "\"#{File.expand_path('../node_modules/react-native/React/Fabric/Mounting', Pod::Config.instance.installation_root)}\""
-    boost_headers = '$(PODS_ROOT)/boost'
-    double_conversion_headers = '$(PODS_ROOT)/DoubleConversion'
-    fmt_headers = '$(PODS_ROOT)/fmt/include'
-    additional_common_headers = [
-      "\"#{react_common}\"",
-      "\"#{File.join(react_common, 'callinvoker')}\"",
-      "\"#{File.join(react_common, 'callinvoker', 'ReactCommon')}\"",
-      "\"#{File.join(react_common, 'react')}\"",
-      "\"#{File.join(react_common, 'react', 'debug')}\"",
-      "\"#{File.join(react_common, 'react', 'renderer')}\"",
-      "\"#{react_featureflags}\"",
-      runtimeexecutor_root,
-      runtimeexecutor_sub,
-      runtimeexecutor_ios_root,
-      turbomodule_core_root,
-      turbomodule_core_platform_ios,
-      reactcommon_framework_headers,
-      "\"#{rn_root}\"",
-      "\"#{react_root}\"",
-      "\"#{File.join(react_root, '**')}\"",
-      react_fabric_mounting,
-      react_node_modules_root,
-      react_node_modules_fabric,
-      react_node_modules_fabric_mounting
-    ].join(' ')
-    additional_third_party_headers = [
-      '$(PODS_ROOT)/RCT-Folly',
-      "\"#{folly_sandbox}\"",
-      folly_framework_headers,
-      boost_headers,
-      double_conversion_headers,
-      fmt_headers
-    ].join(' ')
-
-    installer.pods_project.targets.each do |target|
-      target.build_configurations.each do |cfg|
-        cfg.build_settings['SWIFT_VERSION'] = '5.9'
-        cfg.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
-        cfg.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
-
-        headers = cfg.build_settings['HEADER_SEARCH_PATHS'] || '$(inherited)'
-        headers = headers.to_s
-        headers = "$(inherited) #{headers}" unless headers.include?('$(inherited)')
-        cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{headers} #{additional_common_headers} #{additional_third_party_headers}"
-        oc = cfg.build_settings['OTHER_CFLAGS'] || '$(inherited)'
-        cfg.build_settings['OTHER_CFLAGS'] =
-          "#{oc} -isystem \"#{folly_sandbox}\" -isystem $(PODS_ROOT)/RCT-Folly -isystem #{boost_headers} -isystem #{double_conversion_headers} -isystem #{fmt_headers} -isystem \"#{File.join(react_common, 'callinvoker')}\" -isystem \"#{File.join(react_common, 'callinvoker', 'ReactCommon')}\" -isystem #{runtimeexecutor_root} -isystem #{runtimeexecutor_sub} -isystem #{runtimeexecutor_ios_root} -isystem #{turbomodule_core_root} -isystem #{turbomodule_core_platform_ios} -isystem #{react_fabric_mounting}"
-        unless cfg.build_settings['HEADER_SEARCH_PATHS'].to_s.include?(react_featureflags)
-          cfg.build_settings['HEADER_SEARCH_PATHS'] =
-            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} \"#{react_featureflags}\""
-        end
-
-        if %w[FirebaseCoreInternal GoogleUtilities FirebaseFirestoreInternal].include?(target.name)
-          cfg.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
-        end
-      end
-
-      if target.name == 'React-rendererdebug'
-        target.build_configurations.each do |cfg|
-          cfg.build_settings['HEADER_SEARCH_PATHS'] =
-            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} \"#{react_common}\" $(PODS_ROOT)/DoubleConversion"
-        end
-      end
-
-      if %w[ExpoModulesJSI ExpoModulesCore].include?(target.name)
-        extra_headers = [
-          "\"#{react_common}\"",
-          "\"#{File.join(react_common, 'callinvoker')}\"",
-          "\"#{File.join(react_common, 'runtimeexecutor')}\"",
-          "\"#{File.join(react_common, 'react', 'nativemodule', 'core')}\"",
-          "\"#{react_featureflags}\"",
-          "\"#{react_codegen_generated}\"",
-          hermes_headers
-        ].join(' ')
-
-        target.build_configurations.each do |cfg|
-          cfg.build_settings['HEADER_SEARCH_PATHS'] =
-            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} #{extra_headers}"
-        end
-      elsif target.name.include?('React-featureflags')
-        target.build_configurations.each do |cfg|
-          cfg.build_settings['HEADER_SEARCH_PATHS'] =
-            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} \"#{react_common}\" \"#{react_featureflags}\""
-        end
-      end
-
-      if target.name.include?('jsinspector')
-        # jsinspector-modern tracing headers under ReactCommon/jsinspector-modern
-        jsinspector_headers = [
-          "\"#{react_common}\"",
-          "\"#{File.join(react_common, 'jsinspector-modern')}\"",
-          "\"#{File.join(react_common, 'jsinspector-modern', 'tracing')}\""
-        ].join(' ')
-        target.build_configurations.each do |cfg|
-          cfg.build_settings['HEADER_SEARCH_PATHS'] =
-            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} #{jsinspector_headers} $(PODS_ROOT)/RCT-Folly \"#{folly_sandbox}\" \"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/folly.framework/Headers\" $(PODS_ROOT)/boost $(PODS_ROOT)/DoubleConversion $(PODS_ROOT)/fmt/include"
-          other_cflags = cfg.build_settings['OTHER_CFLAGS'] || '$(inherited)'
-          cfg.build_settings['OTHER_CFLAGS'] =
-            "#{other_cflags} -isystem \"#{folly_sandbox}\" -isystem \"$(PODS_ROOT)/RCT-Folly\" -isystem \"$(PODS_ROOT)/boost\" -isystem \"$(PODS_ROOT)/DoubleConversion\" -isystem \"$(PODS_ROOT)/fmt/include\""
-        end
-      else
-        target.build_configurations.each do |cfg|
-          next if cfg.build_settings['HEADER_SEARCH_PATHS'].to_s.include?(folly_sandbox)
-
-          cfg.build_settings['HEADER_SEARCH_PATHS'] =
-            "#{cfg.build_settings['HEADER_SEARCH_PATHS']} $(PODS_ROOT)/RCT-Folly \"#{folly_sandbox}\" \"${PODS_CONFIGURATION_BUILD_DIR}/RCT-Folly/folly.framework/Headers\""
-          other_cflags = cfg.build_settings['OTHER_CFLAGS'] || '$(inherited)'
-          cfg.build_settings['OTHER_CFLAGS'] =
-            "#{other_cflags} -isystem \"#{folly_sandbox}\" -isystem \"$(PODS_ROOT)/RCT-Folly\""
-        end
-      end
-    end
-
-    # Ensure React/RCTComponentViewFactory.h is reachable even with static frameworks
-    require 'fileutils'
-    fab_mounting_dir = File.join(rn_root, 'React', 'Fabric', 'Mounting')
-    fab_root_dir = File.join(rn_root, 'React', 'Fabric')
-    dest_dir = File.join(installer.sandbox.root, 'Headers', 'Public', 'React-Core', 'React')
-    if File.directory?(fab_mounting_dir)
-      FileUtils.mkdir_p(dest_dir)
-      Dir.glob(File.join(fab_mounting_dir, '*.h')).each do |hdr|
-        FileUtils.cp(hdr, File.join(dest_dir, File.basename(hdr)))
-      end
-    end
-    if File.directory?(fab_root_dir)
-      dest_root = File.join(installer.sandbox.root, 'Headers', 'Public', 'React-Core', 'React', 'Fabric')
-      FileUtils.mkdir_p(dest_root)
-      Dir.glob(File.join(fab_root_dir, '*.h')).each do |hdr|
-        FileUtils.cp(hdr, File.join(dest_root, File.basename(hdr)))
-      end
-    end
-
-    # Universal include paths to avoid modular header whack-a-mole with static frameworks
     universal_headers = [
       '$(inherited)',
       '$(PODS_ROOT)/Headers/Public',
       '$(PODS_ROOT)/Headers/Private',
       '"${PODS_CONFIGURATION_BUILD_DIR}/**"',
       '$(PODS_ROOT)/React-Core/React',
-      '$(PODS_ROOT)/Headers/Public/React-Core',
-      '"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core.framework/Headers"',
-      '"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core.framework/Headers/React"',
       '$(PODS_ROOT)/React-Core/React/Fabric',
-      '$(PODS_ROOT)/React-Core/React/Fabric/Mounting',
-      '$(PODS_ROOT)/Headers/Public/React-Fabric',
-      '$(PODS_ROOT)/Headers/Private/React-Core',
-      '$(PODS_ROOT)/Headers/Public/React-Core/React',
-      '"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core.framework/Headers/Fabric"',
-      '"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core.framework/Headers/React/Fabric"'
+      '$(PODS_ROOT)/React-Core/React/Fabric/Mounting'
     ].join(' ')
 
     installer.pods_project.targets.each do |t|
       t.build_configurations.each do |cfg|
-        cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{universal_headers} $(inherited)"
-        cfg.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+        cfg.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
         cfg.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+        cfg.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+        cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{universal_headers} $(inherited)"
+        cfg.build_settings['OTHER_CFLAGS'] = [
+          cfg.build_settings['OTHER_CFLAGS'] || '$(inherited)',
+          '-isystem $(PODS_ROOT)/RCT-Folly',
+          '-isystem $(PODS_ROOT)/boost',
+          '-isystem $(PODS_ROOT)/DoubleConversion',
+          '-isystem $(PODS_ROOT)/fmt/include'
+        ].join(' ')
       end
     end
   end
