@@ -70,7 +70,8 @@ target 'faleyna' do
       turbomodule_core_platform_ios,
       reactcommon_framework_headers,
       "\"#{rn_root}\"",
-      "\"#{react_root}\""
+      "\"#{react_root}\"",
+      "\"#{File.join(react_root, '**')}\""
     ].join(' ')
     additional_third_party_headers = [
       '$(PODS_ROOT)/RCT-Folly',
@@ -165,7 +166,9 @@ target 'faleyna' do
       '$(inherited)',
       '$(PODS_ROOT)/Headers/Public',
       '$(PODS_ROOT)/Headers/Private',
-      '"${PODS_CONFIGURATION_BUILD_DIR}/**"'
+      '"${PODS_CONFIGURATION_BUILD_DIR}/**"',
+      '$(PODS_ROOT)/React-Core/React',
+      '$(PODS_ROOT)/Headers/Public/React-Core'
     ].join(' ')
 
     installer.pods_project.targets.each do |t|
