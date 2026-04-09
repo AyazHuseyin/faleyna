@@ -41,6 +41,7 @@ target 'faleyna' do
     react_core_react_dest = File.join(installer.sandbox.root, 'Headers', 'Public', 'React-Core', 'React')
     fabric_root = File.join(rn_root, 'React', 'Fabric')
     fabric_mounting = File.join(fabric_root, 'Mounting')
+    react_root = File.join(rn_root, 'React')
 
     universal_headers = [
       '$(inherited)',
@@ -53,7 +54,10 @@ target 'faleyna' do
       "\"#{react_common}\"",
       "\"#{File.join(react_common, 'runtimeexecutor')}\"",
       "\"#{File.join(react_common, 'runtimeexecutor', 'ReactCommon')}\"",
-      '"${PODS_CONFIGURATION_BUILD_DIR}/ReactCommon/ReactCommon.framework/Headers"'
+      '"${PODS_CONFIGURATION_BUILD_DIR}/ReactCommon/ReactCommon.framework/Headers"',
+      "\"#{react_root}\"",
+      "\"#{fabric_root}\"",
+      "\"#{fabric_mounting}\""
     ].join(' ')
 
     installer.pods_project.targets.each do |t|
@@ -70,7 +74,10 @@ target 'faleyna' do
           '-isystem $(PODS_ROOT)/fmt/include',
           "-isystem \"#{react_common}\"",
           "-isystem \"#{File.join(react_common, 'runtimeexecutor')}\"",
-          "-isystem \"#{File.join(react_common, 'runtimeexecutor', 'ReactCommon')}\""
+          "-isystem \"#{File.join(react_common, 'runtimeexecutor', 'ReactCommon')}\"",
+          "-isystem \"#{react_root}\"",
+          "-isystem \"#{fabric_root}\"",
+          "-isystem \"#{fabric_mounting}\""
         ].join(' ')
       end
     end
