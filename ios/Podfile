@@ -156,5 +156,21 @@ target 'faleyna' do
         end
       end
     end
+
+    # Universal include paths to avoid modular header whack-a-mole with static frameworks
+    universal_headers = [
+      '$(inherited)',
+      '$(PODS_ROOT)/Headers/Public',
+      '$(PODS_ROOT)/Headers/Private',
+      '"${PODS_CONFIGURATION_BUILD_DIR}/**"'
+    ].join(' ')
+
+    installer.pods_project.targets.each do |t|
+      t.build_configurations.each do |cfg|
+        cfg.build_settings['HEADER_SEARCH_PATHS'] =
+          "#{universal_headers} #{cfg.build_settings['HEADER_SEARCH_PATHS']}"
+        cfg.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+      end
+    end
   end
 end
