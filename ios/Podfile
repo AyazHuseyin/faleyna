@@ -35,6 +35,9 @@ target 'faleyna' do
       :mac_catalyst_enabled => false
     )
 
+    rn_root = File.expand_path(config[:reactNativePath], Pod::Config.instance.installation_root)
+    react_common = File.join(rn_root, 'ReactCommon')
+
     universal_headers = [
       '$(inherited)',
       '$(PODS_ROOT)/Headers/Public',
@@ -42,7 +45,11 @@ target 'faleyna' do
       '"${PODS_CONFIGURATION_BUILD_DIR}/**"',
       '$(PODS_ROOT)/React-Core/React',
       '$(PODS_ROOT)/React-Core/React/Fabric',
-      '$(PODS_ROOT)/React-Core/React/Fabric/Mounting'
+      '$(PODS_ROOT)/React-Core/React/Fabric/Mounting',
+      "\"#{react_common}\"",
+      "\"#{File.join(react_common, 'runtimeexecutor')}\"",
+      "\"#{File.join(react_common, 'runtimeexecutor', 'ReactCommon')}\"",
+      '"${PODS_CONFIGURATION_BUILD_DIR}/ReactCommon/ReactCommon.framework/Headers"'
     ].join(' ')
 
     installer.pods_project.targets.each do |t|
@@ -56,7 +63,10 @@ target 'faleyna' do
           '-isystem $(PODS_ROOT)/RCT-Folly',
           '-isystem $(PODS_ROOT)/boost',
           '-isystem $(PODS_ROOT)/DoubleConversion',
-          '-isystem $(PODS_ROOT)/fmt/include'
+          '-isystem $(PODS_ROOT)/fmt/include',
+          "-isystem \"#{react_common}\"",
+          "-isystem \"#{File.join(react_common, 'runtimeexecutor')}\"",
+          "-isystem \"#{File.join(react_common, 'runtimeexecutor', 'ReactCommon')}\""
         ].join(' ')
       end
     end
