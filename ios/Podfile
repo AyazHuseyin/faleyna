@@ -37,6 +37,10 @@ target 'faleyna' do
 
     rn_root = File.expand_path(config[:reactNativePath], Pod::Config.instance.installation_root)
     react_common = File.join(rn_root, 'ReactCommon')
+    react_common_dest = File.join(installer.sandbox.root, 'Headers', 'Public', 'ReactCommon', 'ReactCommon')
+    react_core_react_dest = File.join(installer.sandbox.root, 'Headers', 'Public', 'React-Core', 'React')
+    fabric_root = File.join(rn_root, 'React', 'Fabric')
+    fabric_mounting = File.join(fabric_root, 'Mounting')
 
     universal_headers = [
       '$(inherited)',
@@ -68,6 +72,28 @@ target 'faleyna' do
           "-isystem \"#{File.join(react_common, 'runtimeexecutor')}\"",
           "-isystem \"#{File.join(react_common, 'runtimeexecutor', 'ReactCommon')}\""
         ].join(' ')
+      end
+    end
+
+    # Copy all ReactCommon headers into Public so <ReactCommon/...> resolves under use_frameworks
+    if File.directory?(react_common)
+      FileUtils.mkdir_p(react_common_dest)
+      Dir.glob(File.join(react_common, '**', '*.h')).each do |hdr|
+        FileUtils.cp(hdr, File.join(react_common_dest, File.basename(hdr)))
+      end
+    end
+
+    # Expose Fabric headers (e.g., RCTComponentViewFactory) under React/ for use_frameworks
+    if File.directory?(fabric_root)
+      FileUtils.mkdir_p(react_core_react_dest)
+      Dir.glob(File.join(fabric_root, '*.h')).each do |hdr|
+        FileUtils.cp(hdr, File.join(react_core_react_dest, File.basename(hdr)))
+      end
+    end
+    if File.directory?(fabric_mounting)
+      FileUtils.mkdir_p(react_core_react_dest)
+      Dir.glob(File.join(fabric_mounting, '*.h')).each do |hdr|
+        FileUtils.cp(hdr, File.join(react_core_react_dest, File.basename(hdr)))
       end
     end
   end
