@@ -40,6 +40,7 @@ target 'faleyna' do
 
     rn_root = File.expand_path(config[:reactNativePath], Pod::Config.instance.installation_root)
     react_common = File.join(rn_root, 'ReactCommon')
+    react_root = File.join(rn_root, 'React')
     react_featureflags = File.join(react_common, 'react', 'featureflags')
     react_codegen_generated = File.join(rn_root, 'React', 'FBReactNativeSpec', 'Generated')
     hermes_headers = '$(PODS_ROOT)/hermes-engine/destroot/include'
@@ -67,7 +68,9 @@ target 'faleyna' do
       runtimeexecutor_ios_root,
       turbomodule_core_root,
       turbomodule_core_platform_ios,
-      reactcommon_framework_headers
+      reactcommon_framework_headers,
+      "\"#{rn_root}\"",
+      "\"#{react_root}\""
     ].join(' ')
     additional_third_party_headers = [
       '$(PODS_ROOT)/RCT-Folly',
