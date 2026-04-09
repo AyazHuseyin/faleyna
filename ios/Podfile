@@ -53,6 +53,9 @@ target 'faleyna' do
     turbomodule_core_root = "\"#{File.join(react_common, 'turbomodule', 'core')}\""
     turbomodule_core_platform_ios = "\"#{File.join(react_common, 'turbomodule', 'core', 'platform', 'ios', 'ReactCommon')}\""
     react_fabric_mounting = "\"#{File.join(react_root, 'Fabric', 'Mounting')}\""
+    react_node_modules_root = "\"#{File.expand_path('../node_modules/react-native/React', Pod::Config.instance.installation_root)}\""
+    react_node_modules_fabric = "\"#{File.expand_path('../node_modules/react-native/React/Fabric', Pod::Config.instance.installation_root)}\""
+    react_node_modules_fabric_mounting = "\"#{File.expand_path('../node_modules/react-native/React/Fabric/Mounting', Pod::Config.instance.installation_root)}\""
     boost_headers = '$(PODS_ROOT)/boost'
     double_conversion_headers = '$(PODS_ROOT)/DoubleConversion'
     fmt_headers = '$(PODS_ROOT)/fmt/include'
@@ -73,7 +76,10 @@ target 'faleyna' do
       "\"#{rn_root}\"",
       "\"#{react_root}\"",
       "\"#{File.join(react_root, '**')}\"",
-      react_fabric_mounting
+      react_fabric_mounting,
+      react_node_modules_root,
+      react_node_modules_fabric,
+      react_node_modules_fabric_mounting
     ].join(' ')
     additional_third_party_headers = [
       '$(PODS_ROOT)/RCT-Folly',
