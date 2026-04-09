@@ -181,7 +181,11 @@ target 'faleyna' do
       '"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core.framework/Headers/React"',
       '$(PODS_ROOT)/React-Core/React/Fabric',
       '$(PODS_ROOT)/React-Core/React/Fabric/Mounting',
-      '$(PODS_ROOT)/Headers/Public/React-Fabric'
+      '$(PODS_ROOT)/Headers/Public/React-Fabric',
+      '$(PODS_ROOT)/Headers/Private/React-Core',
+      '$(PODS_ROOT)/Headers/Public/React-Core/React',
+      '"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core.framework/Headers/Fabric"',
+      '"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/React-Core.framework/Headers/React/Fabric"'
     ].join(' ')
 
     installer.pods_project.targets.each do |t|
