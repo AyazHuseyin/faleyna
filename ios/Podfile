@@ -171,11 +171,13 @@ target 'faleyna' do
 
     # Ensure React/RCTComponentViewFactory.h is reachable even with static frameworks
     require 'fileutils'
-    fab_header = File.join(rn_root, 'React', 'Fabric', 'Mounting', 'RCTComponentViewFactory.h')
+    fab_mounting_dir = File.join(rn_root, 'React', 'Fabric', 'Mounting')
     dest_dir = File.join(installer.sandbox.root, 'Headers', 'Public', 'React-Core', 'React')
-    if File.exist?(fab_header)
+    if File.directory?(fab_mounting_dir)
       FileUtils.mkdir_p(dest_dir)
-      FileUtils.cp(fab_header, File.join(dest_dir, 'RCTComponentViewFactory.h'))
+      Dir.glob(File.join(fab_mounting_dir, '*.h')).each do |hdr|
+        FileUtils.cp(hdr, File.join(dest_dir, File.basename(hdr)))
+      end
     end
 
     # Universal include paths to avoid modular header whack-a-mole with static frameworks
