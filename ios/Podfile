@@ -209,10 +209,9 @@ target 'faleyna' do
 
     installer.pods_project.targets.each do |t|
       t.build_configurations.each do |cfg|
-        cfg.build_settings['HEADER_SEARCH_PATHS'] =
-          "#{universal_headers} #{cfg.build_settings['HEADER_SEARCH_PATHS']}"
+        cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{universal_headers} $(inherited)"
         cfg.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-        cfg.build_settings['CLANG_ENABLE_MODULES'] = 'NO'
+        cfg.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
       end
     end
   end
