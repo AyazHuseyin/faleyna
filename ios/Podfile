@@ -172,11 +172,19 @@ target 'faleyna' do
     # Ensure React/RCTComponentViewFactory.h is reachable even with static frameworks
     require 'fileutils'
     fab_mounting_dir = File.join(rn_root, 'React', 'Fabric', 'Mounting')
+    fab_root_dir = File.join(rn_root, 'React', 'Fabric')
     dest_dir = File.join(installer.sandbox.root, 'Headers', 'Public', 'React-Core', 'React')
     if File.directory?(fab_mounting_dir)
       FileUtils.mkdir_p(dest_dir)
       Dir.glob(File.join(fab_mounting_dir, '*.h')).each do |hdr|
         FileUtils.cp(hdr, File.join(dest_dir, File.basename(hdr)))
+      end
+    end
+    if File.directory?(fab_root_dir)
+      dest_root = File.join(installer.sandbox.root, 'Headers', 'Public', 'React-Core', 'React', 'Fabric')
+      FileUtils.mkdir_p(dest_root)
+      Dir.glob(File.join(fab_root_dir, '*.h')).each do |hdr|
+        FileUtils.cp(hdr, File.join(dest_root, File.basename(hdr)))
       end
     end
 
@@ -204,6 +212,7 @@ target 'faleyna' do
         cfg.build_settings['HEADER_SEARCH_PATHS'] =
           "#{universal_headers} #{cfg.build_settings['HEADER_SEARCH_PATHS']}"
         cfg.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+        cfg.build_settings['CLANG_ENABLE_MODULES'] = 'NO'
       end
     end
   end
