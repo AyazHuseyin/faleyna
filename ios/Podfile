@@ -103,5 +103,12 @@ target 'faleyna' do
         FileUtils.cp(hdr, File.join(react_core_react_dest, File.basename(hdr)))
       end
     end
+    # Copy all React/.h headers (shallow) into React-Core public headers to satisfy <React/...>
+    if File.directory?(react_root)
+      FileUtils.mkdir_p(react_core_react_dest)
+      Dir.glob(File.join(react_root, '*.h')).each do |hdr|
+        FileUtils.cp(hdr, File.join(react_core_react_dest, File.basename(hdr)))
+      end
+    end
   end
 end
