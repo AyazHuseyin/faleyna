@@ -63,7 +63,6 @@ target 'faleyna' do
     installer.pods_project.targets.each do |t|
       t.build_configurations.each do |cfg|
         cfg.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
-        cfg.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
         cfg.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
         cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{universal_headers} $(inherited)"
         cfg.build_settings['OTHER_CFLAGS'] = [
@@ -79,6 +78,17 @@ target 'faleyna' do
           "-isystem \"#{fabric_root}\"",
           "-isystem \"#{fabric_mounting}\""
         ].join(' ')
+      end
+
+      # Disable modules for React* source pods to allow non-exported headers (e.g., RCTComponentViewFactory)
+      if t.name =~ /^(ReactCommon|React-runtimescheduler|React-runtime|React-debug|React-utils|React-perflogger|React-renderer|React-Mapbuffer)/
+        t.build_configurations.each do |cfg|
+          cfg.build_settings['CLANG_ENABLE_MODULES'] = 'NO'
+        end
+      else
+        t.build_configurations.each do |cfg|
+          cfg.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+        end
       end
     end
 
