@@ -39,6 +39,7 @@ target 'faleyna' do
     react_common = File.join(rn_root, 'ReactCommon')
     react_common_dest = File.join(installer.sandbox.root, 'Headers', 'Public', 'ReactCommon', 'ReactCommon')
     react_core_react_dest = File.join(installer.sandbox.root, 'Headers', 'Public', 'React-Core', 'React')
+    react_public_dest = File.join(installer.sandbox.root, 'Headers', 'Public', 'React')
     fabric_root = File.join(rn_root, 'React', 'Fabric')
     fabric_mounting = File.join(fabric_root, 'Mounting')
     react_root = File.join(rn_root, 'React')
@@ -56,6 +57,7 @@ target 'faleyna' do
       "\"#{File.join(react_common, 'runtimeexecutor')}\"",
       "\"#{File.join(react_common, 'runtimeexecutor', 'ReactCommon')}\"",
       '"${PODS_CONFIGURATION_BUILD_DIR}/ReactCommon/ReactCommon.framework/Headers"',
+      '$(PODS_ROOT)/Headers/Public/React',
       "\"#{react_root}\"",
       "\"#{fabric_root}\"",
       "\"#{fabric_mounting}\""
@@ -117,8 +119,10 @@ target 'faleyna' do
     # Copy all React/.h headers (shallow) into React-Core public headers to satisfy <React/...>
     if File.directory?(react_root)
       FileUtils.mkdir_p(react_core_react_dest)
+      FileUtils.mkdir_p(react_public_dest)
       Dir.glob(File.join(react_root, '*.h')).each do |hdr|
         FileUtils.cp(hdr, File.join(react_core_react_dest, File.basename(hdr)))
+        FileUtils.cp(hdr, File.join(react_public_dest, File.basename(hdr)))
       end
     end
 
@@ -133,6 +137,8 @@ target 'faleyna' do
       next unless src
       FileUtils.mkdir_p(react_core_header_root)
       FileUtils.cp(src, File.join(react_core_header_root, file))
+      FileUtils.mkdir_p(react_public_dest)
+      FileUtils.cp(src, File.join(react_public_dest, file))
     end
   end
 end
