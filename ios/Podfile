@@ -42,6 +42,7 @@ target 'faleyna' do
     fabric_root = File.join(rn_root, 'React', 'Fabric')
     fabric_mounting = File.join(fabric_root, 'Mounting')
     react_root = File.join(rn_root, 'React')
+    react_core_header_root = File.join(installer.sandbox.root, 'Headers', 'Public', 'React-Core', 'React')
 
     universal_headers = [
       '$(inherited)',
@@ -119,6 +120,19 @@ target 'faleyna' do
       Dir.glob(File.join(react_root, '*.h')).each do |hdr|
         FileUtils.cp(hdr, File.join(react_core_react_dest, File.basename(hdr)))
       end
+    end
+
+    # Explicitly copy key Fabric headers that trigger failures
+    %w[RCTComponentViewFactory.h RCTSurfacePresenter.h].each do |file|
+      source_paths = [
+        File.join(fabric_mounting, file),
+        File.join(fabric_root, file),
+        File.join(react_root, file)
+      ]
+      src = source_paths.find { |p| File.exist?(p) }
+      next unless src
+      FileUtils.mkdir_p(react_core_header_root)
+      FileUtils.cp(src, File.join(react_core_header_root, file))
     end
   end
 end
