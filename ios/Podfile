@@ -70,6 +70,7 @@ target 'faleyna' do
         cfg.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.1'
         cfg.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
         cfg.build_settings['HEADER_SEARCH_PATHS'] = "#{universal_headers} $(inherited)"
+        cfg.build_settings['SWIFT_STRICT_CONCURRENCY'] = 'minimal'
         cfg.build_settings['SWIFT_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
         cfg.build_settings['OTHER_SWIFT_FLAGS'] = [
           cfg.build_settings['OTHER_SWIFT_FLAGS'] || '',
