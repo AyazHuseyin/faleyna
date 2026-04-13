@@ -42,6 +42,7 @@ target 'faleyna' do
     react_public_dest = File.join(installer.sandbox.root, 'Headers', 'Public', 'React')
     fabric_root = File.join(rn_root, 'React', 'Fabric')
     fabric_mounting = File.join(fabric_root, 'Mounting')
+    fabric_surface = File.join(fabric_root, 'Surface')
     react_root = File.join(rn_root, 'React')
     react_core_header_root = File.join(installer.sandbox.root, 'Headers', 'Public', 'React-Core', 'React')
 
@@ -60,7 +61,8 @@ target 'faleyna' do
       '$(PODS_ROOT)/Headers/Public/React',
       "\"#{react_root}\"",
       "\"#{fabric_root}\"",
-      "\"#{fabric_mounting}\""
+      "\"#{fabric_mounting}\"",
+      "\"#{fabric_surface}\""
     ].join(' ')
 
     installer.pods_project.targets.each do |t|
@@ -79,7 +81,8 @@ target 'faleyna' do
           "-isystem \"#{File.join(react_common, 'runtimeexecutor', 'ReactCommon')}\"",
           "-isystem \"#{react_root}\"",
           "-isystem \"#{fabric_root}\"",
-          "-isystem \"#{fabric_mounting}\""
+          "-isystem \"#{fabric_mounting}\"",
+          "-isystem \"#{fabric_surface}\""
         ].join(' ')
       end
 
@@ -120,6 +123,14 @@ target 'faleyna' do
         FileUtils.cp(hdr, File.join(react_public_dest, File.basename(hdr)))
       end
     end
+    if File.directory?(fabric_surface)
+      FileUtils.mkdir_p(react_core_react_dest)
+      FileUtils.mkdir_p(react_public_dest)
+      Dir.glob(File.join(fabric_surface, '*.h')).each do |hdr|
+        FileUtils.cp(hdr, File.join(react_core_react_dest, File.basename(hdr)))
+        FileUtils.cp(hdr, File.join(react_public_dest, File.basename(hdr)))
+      end
+    end
     # Copy all React/.h headers (shallow) into React-Core public headers to satisfy <React/...>
     if File.directory?(react_root)
       FileUtils.mkdir_p(react_core_react_dest)
@@ -135,6 +146,7 @@ target 'faleyna' do
       source_paths = [
         File.join(fabric_mounting, file),
         File.join(fabric_root, file),
+        File.join(fabric_surface, file),
         File.join(react_root, file)
       ]
       src = source_paths.find { |p| File.exist?(p) }
