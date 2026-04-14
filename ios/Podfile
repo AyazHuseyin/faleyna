@@ -164,5 +164,59 @@ target 'faleyna' do
       FileUtils.mkdir_p(react_public_dest)
       FileUtils.cp(src, File.join(react_public_dest, file))
     end
+
+    # --- Patch expo-modules-core Swift concurrency issues (no network/pod edits) ---
+    patches = {
+      File.join(installer.sandbox.root, '..', 'node_modules', 'expo-modules-core', 'ios', 'ReactDelegates', 'ExpoReactDelegate.swift') => {
+        find: "@objc(EXReactDelegate)\npublic class ExpoReactDelegate: NSObject {",
+        replace: "@MainActor\n@objc(EXReactDelegate)\npublic class ExpoReactDelegate: NSObject {"
+      },
+      File.join(installer.sandbox.root, '..', 'node_modules', 'expo-modules-core', 'ios', 'Core', 'Logging', 'PersistentFileLog.swift') => {
+        find: "public typealias PersistentFileLogFilter = (String) -> Bool",
+        replace: "public typealias PersistentFileLogFilter = @Sendable (String) -> Bool"
+      },
+      File.join(installer.sandbox.root, '..', 'node_modules', 'expo-modules-core', 'ios', 'Core', 'Views', 'SwiftUI', 'SwiftUIHostingView.swift') => {
+        find: "internal protocol AnyExpoSwiftUIHostingView {",
+        replace: "@MainActor\ninternal protocol AnyExpoSwiftUIHostingView {"
+      },
+      File.join(installer.sandbox.root, '..', 'node_modules', 'expo-modules-core', 'ios', 'Core', 'Views', 'SwiftUI', 'SwiftUIVirtualView.swift') => {
+        find: "final class SwiftUIVirtualView<Props: ViewProps, ContentView: View<Props>>: SwiftUIVirtualViewObjC, ExpoSwiftUIView {",
+        replace: "@MainActor\n  final class SwiftUIVirtualView<Props: ViewProps, ContentView: View<Props>>: SwiftUIVirtualViewObjC, ExpoSwiftUIView {"
+      },
+      File.join(installer.sandbox.root, '..', 'node_modules', 'expo-modules-core', 'ios', 'DevTools', 'URLAuthenticationChallengeForwardSender.swift') => {
+        find: "  let completionHandler: (URLSession.AuthChallengeDisposition, URLCredential?) -> Void",
+        replace: "  let completionHandler: @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void"
+      }
+    }
+
+    patches.each do |path, ops|
+      next unless File.exist?(path)
+      content = File.read(path)
+      next if content.include?(ops[:replace])
+      File.write(path, content.sub(ops[:find], ops[:replace]))
+    end
+
+    # Add @Sendable init param in URLAuthenticationChallengeForwardSender.swift
+    sender_path = File.join(installer.sandbox.root, '..', 'node_modules', 'expo-modules-core', 'ios', 'DevTools', 'URLAuthenticationChallengeForwardSender.swift')
+    if File.exist?(sender_path)
+      content = File.read(sender_path)
+      unless content.include?("@Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {")
+        content = content.sub(
+          "  init(completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {",
+          "  init(completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {"
+        )
+        File.write(sender_path, content)
+      end
+    end
+
+    # Append unchecked Sendable to URLSessionSessionDelegateProxy and URLAuthenticationChallengeForwardSender
+    proxy_path = File.join(installer.sandbox.root, '..', 'node_modules', 'expo-modules-core', 'ios', 'DevTools', 'URLSessionSessionDelegateProxy.swift')
+    if File.exist?(proxy_path)
+      content = File.read(proxy_path)
+      unless content.include?("extension URLSessionSessionDelegateProxy: @unchecked Sendable {}")
+        content << "\n\nextension URLSessionSessionDelegateProxy: @unchecked Sendable {}\nextension URLAuthenticationChallengeForwardSender: @unchecked Sendable {}\n"
+        File.write(proxy_path, content)
+      end
+    end
   end
 end
