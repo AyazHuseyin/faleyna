@@ -173,7 +173,7 @@ target 'faleyna' do
       File.write(path, new_content) if new_content != content
     end
 
-    core_base = File.join(installer.sandbox.root, '..', 'node_modules', 'expo-modules-core', 'ios')
+    core_base = File.expand_path(File.join(Pod::Config.instance.installation_root, '..', 'node_modules', 'expo-modules-core', 'ios'))
 
     safe_gsub(File.join(core_base, 'ReactDelegates', 'ExpoReactDelegate.swift'),
               /@objc\(EXReactDelegate\)\s*\npublic class ExpoReactDelegate: NSObject \{/,
