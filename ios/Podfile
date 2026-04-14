@@ -165,55 +165,48 @@ target 'faleyna' do
       FileUtils.cp(src, File.join(react_public_dest, file))
     end
 
-    # --- Patch expo-modules-core Swift concurrency issues (no network/pod edits) ---
-    patches = {
-      File.join(installer.sandbox.root, '..', 'node_modules', 'expo-modules-core', 'ios', 'ReactDelegates', 'ExpoReactDelegate.swift') => {
-        find: "@objc(EXReactDelegate)\npublic class ExpoReactDelegate: NSObject {",
-        replace: "@MainActor\n@objc(EXReactDelegate)\npublic class ExpoReactDelegate: NSObject {"
-      },
-      File.join(installer.sandbox.root, '..', 'node_modules', 'expo-modules-core', 'ios', 'Core', 'Logging', 'PersistentFileLog.swift') => {
-        find: "public typealias PersistentFileLogFilter = (String) -> Bool",
-        replace: "public typealias PersistentFileLogFilter = @Sendable (String) -> Bool"
-      },
-      File.join(installer.sandbox.root, '..', 'node_modules', 'expo-modules-core', 'ios', 'Core', 'Views', 'SwiftUI', 'SwiftUIHostingView.swift') => {
-        find: "internal protocol AnyExpoSwiftUIHostingView {",
-        replace: "@MainActor\ninternal protocol AnyExpoSwiftUIHostingView {"
-      },
-      File.join(installer.sandbox.root, '..', 'node_modules', 'expo-modules-core', 'ios', 'Core', 'Views', 'SwiftUI', 'SwiftUIVirtualView.swift') => {
-        find: "final class SwiftUIVirtualView<Props: ViewProps, ContentView: View<Props>>: SwiftUIVirtualViewObjC, ExpoSwiftUIView {",
-        replace: "@MainActor\n  final class SwiftUIVirtualView<Props: ViewProps, ContentView: View<Props>>: SwiftUIVirtualViewObjC, ExpoSwiftUIView {"
-      },
-      File.join(installer.sandbox.root, '..', 'node_modules', 'expo-modules-core', 'ios', 'DevTools', 'URLAuthenticationChallengeForwardSender.swift') => {
-        find: "  let completionHandler: (URLSession.AuthChallengeDisposition, URLCredential?) -> Void",
-        replace: "  let completionHandler: @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void"
-      }
-    }
-
-    patches.each do |path, ops|
-      next unless File.exist?(path)
+    # --- Patch expo-modules-core Swift concurrency issues (non-isolated/Sendable) ---
+    def safe_gsub(path, regex, replacement)
+      return unless File.exist?(path)
       content = File.read(path)
-      next if content.include?(ops[:replace])
-      File.write(path, content.sub(ops[:find], ops[:replace]))
+      new_content = content.gsub(regex, replacement)
+      File.write(path, new_content) if new_content != content
     end
 
-    # Add @Sendable init param in URLAuthenticationChallengeForwardSender.swift
-    sender_path = File.join(installer.sandbox.root, '..', 'node_modules', 'expo-modules-core', 'ios', 'DevTools', 'URLAuthenticationChallengeForwardSender.swift')
-    if File.exist?(sender_path)
-      content = File.read(sender_path)
-      unless content.include?("@Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {")
-        content = content.sub(
-          "  init(completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {",
-          "  init(completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {"
-        )
-        File.write(sender_path, content)
-      end
-    end
+    core_base = File.join(installer.sandbox.root, '..', 'node_modules', 'expo-modules-core', 'ios')
 
-    # Append unchecked Sendable to URLSessionSessionDelegateProxy and URLAuthenticationChallengeForwardSender
-    proxy_path = File.join(installer.sandbox.root, '..', 'node_modules', 'expo-modules-core', 'ios', 'DevTools', 'URLSessionSessionDelegateProxy.swift')
+    safe_gsub(File.join(core_base, 'ReactDelegates', 'ExpoReactDelegate.swift'),
+              /@objc\(EXReactDelegate\)\s*\npublic class ExpoReactDelegate: NSObject \{/,
+              "@MainActor\n@objc(EXReactDelegate)\npublic class ExpoReactDelegate: NSObject {")
+
+    safe_gsub(File.join(core_base, 'Core', 'Logging', 'PersistentFileLog.swift'),
+              /public typealias PersistentFileLogFilter = \(String\) -> Bool/,
+              "public typealias PersistentFileLogFilter = @Sendable (String) -> Bool")
+
+    safe_gsub(File.join(core_base, 'Core', 'Views', 'SwiftUI', 'SwiftUIHostingView.swift'),
+              /internal protocol AnyExpoSwiftUIHostingView\s*\{/,
+              "@MainActor\ninternal protocol AnyExpoSwiftUIHostingView {")
+
+    safe_gsub(File.join(core_base, 'Core', 'Views', 'SwiftUI', 'SwiftUIVirtualView.swift'),
+              /final class SwiftUIVirtualView<Props: ViewProps, ContentView: View<Props>>: SwiftUIVirtualViewObjC, ExpoSwiftUIView \{/,
+              "@MainActor\n  final class SwiftUIVirtualView<Props: ViewProps, ContentView: View<Props>>: SwiftUIVirtualViewObjC, ExpoSwiftUIView {")
+
+    safe_gsub(File.join(core_base, 'Core', 'Views', 'SwiftUI', 'SwiftUIVirtualView.swift'),
+              /(\s*)func getWrappedView\(\) -> Any \{/,
+              "\\1@MainActor func getWrappedView() -> Any {")
+
+    safe_gsub(File.join(core_base, 'DevTools', 'URLAuthenticationChallengeForwardSender.swift'),
+              /let completionHandler: \(URLSession\.AuthChallengeDisposition, URLCredential\?\) -> Void/,
+              "let completionHandler: @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void")
+
+    safe_gsub(File.join(core_base, 'DevTools', 'URLAuthenticationChallengeForwardSender.swift'),
+              /init\(completionHandler: @escaping \(URLSession\.AuthChallengeDisposition, URLCredential\?\) -> Void\)/,
+              "init(completionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void)")
+
+    proxy_path = File.join(core_base, 'DevTools', 'URLSessionSessionDelegateProxy.swift')
     if File.exist?(proxy_path)
       content = File.read(proxy_path)
-      unless content.include?("extension URLSessionSessionDelegateProxy: @unchecked Sendable {}")
+      unless content.include?('extension URLSessionSessionDelegateProxy: @unchecked Sendable')
         content << "\n\nextension URLSessionSessionDelegateProxy: @unchecked Sendable {}\nextension URLAuthenticationChallengeForwardSender: @unchecked Sendable {}\n"
         File.write(proxy_path, content)
       end
