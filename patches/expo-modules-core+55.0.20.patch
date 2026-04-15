@@ -270,24 +270,6 @@ index 5dc73e3..67b7b8e 100644
    public static func getDynamicType() -> AnyDynamicType {
      return DynamicViewType(innerType: Self.self)
    }
-diff --git a/node_modules/expo-modules-core/ios/DevTools/ExpoRequestInterceptorProtocol.swift b/node_modules/expo-modules-core/ios/DevTools/ExpoRequestInterceptorProtocol.swift
-index 888cf70..ad75c0b 100644
---- a/node_modules/expo-modules-core/ios/DevTools/ExpoRequestInterceptorProtocol.swift
-+++ b/node_modules/expo-modules-core/ios/DevTools/ExpoRequestInterceptorProtocol.swift
-@@ -160,7 +160,12 @@ public final class ExpoRequestInterceptorProtocol: URLProtocol, URLSessionDataDe
-     didReceive challenge: URLAuthenticationChallenge,
-     completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
-   ) {
--    let sender = URLAuthenticationChallengeForwardSender(completionHandler: completionHandler)
-+    // URLSession's completionHandler isn't annotated as @Sendable, but some builds treat it as such.
-+    // Wrap it to satisfy Sendable requirements without changing the delegate signature.
-+    let sendableCompletion: @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void = { disposition, credential in
-+      completionHandler(disposition, credential)
-+    }
-+    let sender = URLAuthenticationChallengeForwardSender(completionHandler: sendableCompletion)
-     let challengeWithSender = URLAuthenticationChallenge(authenticationChallenge: challenge, sender: sender)
-     client?.urlProtocol(self, didReceive: challengeWithSender)
-   }
 diff --git a/node_modules/expo-modules-core/ios/DevTools/URLSessionSessionDelegateProxy.swift b/node_modules/expo-modules-core/ios/DevTools/URLSessionSessionDelegateProxy.swift
 index dbc5b65..f681c96 100644
 --- a/node_modules/expo-modules-core/ios/DevTools/URLSessionSessionDelegateProxy.swift
