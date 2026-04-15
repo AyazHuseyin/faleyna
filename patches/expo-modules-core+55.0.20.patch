@@ -70,18 +70,10 @@ index b376a98..26c695d 100644
      func getWrappedView() -> Any
    }
 diff --git a/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIHostingView.swift b/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIHostingView.swift
-index d4ff7a9..9dbfc39 100644
+index d4ff7a9..08d2ece 100644
 --- a/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIHostingView.swift
 +++ b/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIHostingView.swift
-@@ -5,6 +5,7 @@ import SwiftUI
- /**
-  A type-erased protocol that hosting views must conform to.
-  */
-+@MainActor
- internal protocol AnyExpoSwiftUIHostingView {
-   func updateProps(_ rawProps: [String: Any])
-   func getContentView() -> any ExpoSwiftUI.View
-@@ -42,7 +43,8 @@ extension ExpoSwiftUI {
+@@ -42,7 +42,8 @@ extension ExpoSwiftUI {
    /**
     A hosting view that renders a SwiftUI view inside the UIKit view hierarchy.
     */
@@ -108,18 +100,10 @@ index d62091c..07855fc 100644
      }
    }
 diff --git a/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIVirtualView.swift b/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIVirtualView.swift
-index 6d65323..60eae39 100644
+index 6d65323..f7a0e99 100644
 --- a/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIVirtualView.swift
 +++ b/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIVirtualView.swift
-@@ -7,6 +7,7 @@ extension ExpoSwiftUI {
-    An NSObject acting as a fake UIView for RCTMountingManager to represent a SwiftUI view.
-    This class is the Swift component of SwiftUIVirtualView, as referenced in ExpoFabricView.swift.
-    */
-+  @MainActor
-   final class SwiftUIVirtualView<Props: ViewProps, ContentView: View<Props>>: SwiftUIVirtualViewObjC, ExpoSwiftUIView {
-     var uiView: UIView?
-     
-@@ -80,15 +81,17 @@ extension ExpoSwiftUI {
+@@ -80,15 +80,17 @@ extension ExpoSwiftUI {
      /**
       Updates the environment object with props, based on the given dictionary with raw props.
       */
@@ -146,7 +130,7 @@ index 6d65323..60eae39 100644
        }
      }
  
-@@ -102,15 +105,16 @@ extension ExpoSwiftUI {
+@@ -102,15 +104,16 @@ extension ExpoSwiftUI {
      /**
       Calls lifecycle methods registered by `OnViewDidUpdateProps` definition component.
       */
@@ -171,7 +155,37 @@ index 6d65323..60eae39 100644
      }
  
      /**
-@@ -143,23 +147,25 @@ extension ExpoSwiftUI {
+@@ -126,52 +129,58 @@ extension ExpoSwiftUI {
+     /**
+      Fabric calls this function when mounting (attaching) a child component view.
+      */
+-    override func mountChildComponentView(_ childComponentView: UIView, index: Int) {
+-      var children = props.children ?? []
+-      let child: any AnyChild
+-      if let view = childComponentView as AnyObject as? (any ExpoSwiftUI.View) {
+-        child = view
+-      } else {
+-        child = UIViewHost(view: childComponentView)
+-      }
+-      children.insert(child, at: index)
++    nonisolated override func mountChildComponentView(_ childComponentView: UIView, index: Int) {
++      MainActor.assumeIsolated {
++        var children = props.children ?? []
++        let child: any AnyChild
++        if let view = childComponentView as AnyObject as? (any ExpoSwiftUI.View) {
++          child = view
++        } else {
++          child = UIViewHost(view: childComponentView)
++        }
++        children.insert(child, at: index)
+ 
+-      props.children = children
+-      props.objectWillChange.send()
++        props.children = children
++        props.objectWillChange.send()
++      }
+     }
+ 
      /**
       Fabric calls this function when unmounting (detaching) a child component view.
       */
@@ -213,7 +227,27 @@ index 6d65323..60eae39 100644
        }
      }
  
-@@ -193,7 +199,7 @@ extension ExpoSwiftUI {
+     // MARK: - Privates
+ 
+-    override func removeFromSuperview() {
+-      // When the view is unmounted, the focus on TextFieldView stays active and it causes a crash, so we blur it here
+-      // UIView does something similar to resign the first responder in removeFromSuperview, so we do the same for our virtual view
+-      if let focusableView = contentView as? any ExpoSwiftUI.FocusableView {
+-        focusableView.forceResignFirstResponder()
++    nonisolated override func removeFromSuperview() {
++      MainActor.assumeIsolated {
++        // When the view is unmounted, the focus on TextFieldView stays active and it causes a crash, so we blur it here
++        // UIView does something similar to resign the first responder in removeFromSuperview, so we do the same for our virtual view
++        if let focusableView = contentView as? any ExpoSwiftUI.FocusableView {
++          focusableView.forceResignFirstResponder()
++        }
++        super.removeFromSuperview()
+       }
+-      super.removeFromSuperview()
+     }
+ 
+     /**
+@@ -193,7 +202,7 @@ extension ExpoSwiftUI {
  
  // MARK: - ViewWrapper
  
@@ -236,6 +270,24 @@ index 5dc73e3..67b7b8e 100644
    public static func getDynamicType() -> AnyDynamicType {
      return DynamicViewType(innerType: Self.self)
    }
+diff --git a/node_modules/expo-modules-core/ios/DevTools/ExpoRequestInterceptorProtocol.swift b/node_modules/expo-modules-core/ios/DevTools/ExpoRequestInterceptorProtocol.swift
+index 888cf70..ad75c0b 100644
+--- a/node_modules/expo-modules-core/ios/DevTools/ExpoRequestInterceptorProtocol.swift
++++ b/node_modules/expo-modules-core/ios/DevTools/ExpoRequestInterceptorProtocol.swift
+@@ -160,7 +160,12 @@ public final class ExpoRequestInterceptorProtocol: URLProtocol, URLSessionDataDe
+     didReceive challenge: URLAuthenticationChallenge,
+     completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+   ) {
+-    let sender = URLAuthenticationChallengeForwardSender(completionHandler: completionHandler)
++    // URLSession's completionHandler isn't annotated as @Sendable, but some builds treat it as such.
++    // Wrap it to satisfy Sendable requirements without changing the delegate signature.
++    let sendableCompletion: @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void = { disposition, credential in
++      completionHandler(disposition, credential)
++    }
++    let sender = URLAuthenticationChallengeForwardSender(completionHandler: sendableCompletion)
+     let challengeWithSender = URLAuthenticationChallenge(authenticationChallenge: challenge, sender: sender)
+     client?.urlProtocol(self, didReceive: challengeWithSender)
+   }
 diff --git a/node_modules/expo-modules-core/ios/DevTools/URLSessionSessionDelegateProxy.swift b/node_modules/expo-modules-core/ios/DevTools/URLSessionSessionDelegateProxy.swift
 index dbc5b65..f681c96 100644
 --- a/node_modules/expo-modules-core/ios/DevTools/URLSessionSessionDelegateProxy.swift
@@ -247,15 +299,3 @@ index dbc5b65..f681c96 100644
 +
 +extension URLSessionSessionDelegateProxy: @unchecked Sendable {}
 +extension URLAuthenticationChallengeForwardSender: @unchecked Sendable {}
-diff --git a/node_modules/expo-modules-core/ios/ReactDelegates/ExpoReactDelegate.swift b/node_modules/expo-modules-core/ios/ReactDelegates/ExpoReactDelegate.swift
-index 81871a0..f5ff2c5 100644
---- a/node_modules/expo-modules-core/ios/ReactDelegates/ExpoReactDelegate.swift
-+++ b/node_modules/expo-modules-core/ios/ReactDelegates/ExpoReactDelegate.swift
-@@ -3,6 +3,7 @@
- /**
-  An extensible react instance creation delegate. This class will loop through each `ExpoReactDelegateHandler` to determine the winner to create the instance.
-  */
-+@MainActor
- @objc(EXReactDelegate)
- public class ExpoReactDelegate: NSObject {
-   private let handlers: [ExpoReactDelegateHandler]
