@@ -1,0 +1,14 @@
+diff --git a/node_modules/react-native-screens/ios/conversion/RNSConversions.h b/node_modules/react-native-screens/ios/conversion/RNSConversions.h
+index 1cd01f3..bdf7460 100644
+--- a/node_modules/react-native-screens/ios/conversion/RNSConversions.h
++++ b/node_modules/react-native-screens/ios/conversion/RNSConversions.h
+@@ -2,7 +2,9 @@
+ 
+ #if defined(__cplusplus)
+ #import <React/RCTImageSource.h>
++#if RCT_NEW_ARCH_ENABLED
+ #import <react/renderer/components/rnscreens/Props.h>
++#endif // RCT_NEW_ARCH_ENABLED
+ #import "RNSEnums.h"
+ 
+ #if RCT_NEW_ARCH_ENABLED
