@@ -270,6 +270,25 @@ index 5dc73e3..67b7b8e 100644
    public static func getDynamicType() -> AnyDynamicType {
      return DynamicViewType(innerType: Self.self)
    }
+diff --git a/node_modules/expo-modules-core/ios/DevTools/ExpoRequestInterceptorProtocol.swift b/node_modules/expo-modules-core/ios/DevTools/ExpoRequestInterceptorProtocol.swift
+index 888cf70..3408376 100644
+--- a/node_modules/expo-modules-core/ios/DevTools/ExpoRequestInterceptorProtocol.swift
++++ b/node_modules/expo-modules-core/ios/DevTools/ExpoRequestInterceptorProtocol.swift
+@@ -160,7 +160,13 @@ public final class ExpoRequestInterceptorProtocol: URLProtocol, URLSessionDataDe
+     didReceive challenge: URLAuthenticationChallenge,
+     completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+   ) {
+-    let sender = URLAuthenticationChallengeForwardSender(completionHandler: completionHandler)
++    // Some Swift 6 builds require this completion handler to be @Sendable.
++    // URLSession doesn't annotate it as such, so we bridge it unsafely.
++    let sendableCompletionHandler = unsafeBitCast(
++      completionHandler,
++      to: (@Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void).self
++    )
++    let sender = URLAuthenticationChallengeForwardSender(sendableCompletionHandler: sendableCompletionHandler)
+     let challengeWithSender = URLAuthenticationChallenge(authenticationChallenge: challenge, sender: sender)
+     client?.urlProtocol(self, didReceive: challengeWithSender)
+   }
 diff --git a/node_modules/expo-modules-core/ios/DevTools/URLAuthenticationChallengeForwardSender.swift b/node_modules/expo-modules-core/ios/DevTools/URLAuthenticationChallengeForwardSender.swift
 index 8c3efcb..ad37660 100644
 --- a/node_modules/expo-modules-core/ios/DevTools/URLAuthenticationChallengeForwardSender.swift
