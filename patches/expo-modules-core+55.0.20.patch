@@ -11,11 +11,31 @@ index 5ddcbb6..b857555 100644
  public typealias PersistentFileLogCompletionHandler = (Error?) -> Void
  
  /**
+diff --git a/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/ExpoSwiftUI.swift b/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/ExpoSwiftUI.swift
+index b376a98..26c695d 100644
+--- a/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/ExpoSwiftUI.swift
++++ b/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/ExpoSwiftUI.swift
+@@ -23,6 +23,7 @@ extension ExpoSwiftUI {
+    Protocol for wrapper views (e.g., UIBaseView) that wrap an inner view.
+    Used by DynamicSwiftUIViewType to resolve the underlying view through wrapper layers.
+    */
++  @MainActor
+   public protocol ViewWrapper {
+     func getWrappedView() -> Any
+   }
 diff --git a/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIHostingView.swift b/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIHostingView.swift
-index d4ff7a9..09fa7be 100644
+index d4ff7a9..d69db46 100644
 --- a/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIHostingView.swift
 +++ b/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIHostingView.swift
-@@ -42,7 +42,7 @@ extension ExpoSwiftUI {
+@@ -5,6 +5,7 @@ import SwiftUI
+ /**
+  A type-erased protocol that hosting views must conform to.
+  */
++@MainActor
+ internal protocol AnyExpoSwiftUIHostingView {
+   func updateProps(_ rawProps: [String: Any])
+   func getContentView() -> any ExpoSwiftUI.View
+@@ -42,7 +43,7 @@ extension ExpoSwiftUI {
    /**
     A hosting view that renders a SwiftUI view inside the UIKit view hierarchy.
     */
@@ -261,3 +281,15 @@ index dbc5b65..f681c96 100644
 +
 +extension URLSessionSessionDelegateProxy: @unchecked Sendable {}
 +extension URLAuthenticationChallengeForwardSender: @unchecked Sendable {}
+diff --git a/node_modules/expo-modules-core/ios/ReactDelegates/ExpoReactDelegate.swift b/node_modules/expo-modules-core/ios/ReactDelegates/ExpoReactDelegate.swift
+index 81871a0..2529cfb 100644
+--- a/node_modules/expo-modules-core/ios/ReactDelegates/ExpoReactDelegate.swift
++++ b/node_modules/expo-modules-core/ios/ReactDelegates/ExpoReactDelegate.swift
+@@ -35,6 +35,7 @@ public class ExpoReactDelegate: NSObject {
+   }
+ 
+   @objc
++  @MainActor
+   public func createRootViewController() -> UIViewController {
+     return self.handlers.lazy
+       .compactMap { $0.createRootViewController() }
