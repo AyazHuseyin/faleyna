@@ -270,6 +270,26 @@ index 5dc73e3..67b7b8e 100644
    public static func getDynamicType() -> AnyDynamicType {
      return DynamicViewType(innerType: Self.self)
    }
+diff --git a/node_modules/expo-modules-core/ios/DevTools/URLAuthenticationChallengeForwardSender.swift b/node_modules/expo-modules-core/ios/DevTools/URLAuthenticationChallengeForwardSender.swift
+index 8c3efcb..ad37660 100644
+--- a/node_modules/expo-modules-core/ios/DevTools/URLAuthenticationChallengeForwardSender.swift
++++ b/node_modules/expo-modules-core/ios/DevTools/URLAuthenticationChallengeForwardSender.swift
+@@ -11,6 +11,15 @@ internal final class URLAuthenticationChallengeForwardSender: NSObject, URLAuthe
+     super.init()
+   }
+ 
++  // Some builds treat URLSession delegate closures as @Sendable under Swift 6 strict concurrency.
++  // Provide an overload to accept a @Sendable completion handler and forward to the non-sendable storage.
++  init(sendableCompletionHandler: @escaping @Sendable (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
++    self.completionHandler = { disposition, credential in
++      sendableCompletionHandler(disposition, credential)
++    }
++    super.init()
++  }
++
+   func use(_ credential: URLCredential, for challenge: URLAuthenticationChallenge) {
+     completionHandler(.useCredential, credential)
+   }
 diff --git a/node_modules/expo-modules-core/ios/DevTools/URLSessionSessionDelegateProxy.swift b/node_modules/expo-modules-core/ios/DevTools/URLSessionSessionDelegateProxy.swift
 index dbc5b65..f681c96 100644
 --- a/node_modules/expo-modules-core/ios/DevTools/URLSessionSessionDelegateProxy.swift
