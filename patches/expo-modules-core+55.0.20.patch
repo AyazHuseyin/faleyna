@@ -91,10 +91,10 @@ index 5ddcbb6..b857555 100644
  
  /**
 diff --git a/node_modules/expo-modules-core/ios/Core/SharedObjects/SharedObject.swift b/node_modules/expo-modules-core/ios/Core/SharedObjects/SharedObject.swift
-index 3e81f83..1720de5 100644
+index 3e81f83..bc276df 100644
 --- a/node_modules/expo-modules-core/ios/Core/SharedObjects/SharedObject.swift
 +++ b/node_modules/expo-modules-core/ios/Core/SharedObjects/SharedObject.swift
-@@ -79,16 +79,24 @@ public extension SharedObject { // swiftlint:disable:this no_grouping_extension
+@@ -79,16 +79,25 @@ public extension SharedObject { // swiftlint:disable:this no_grouping_extension
      // Collect arguments and their dynamic types from parameter pack
      var argumentPairs: [(AnyArgument, AnyDynamicType)] = []
      repeat argumentPairs.append((each arguments, ~(each A).self))
@@ -102,17 +102,19 @@ index 3e81f83..1720de5 100644
 +
 +    // Avoid capturing `self` in a concurrency-checked closure.
 +    let objectId = sharedObjectId
++    let objectTypeName = String(describing: type(of: self))
  
      // Schedule the event to be asynchronously emitted from the runtime's thread
 -    runtime.schedule { [weak self, weak appContext] in
 -      guard let appContext, let runtime = try? appContext.runtime, let jsObject = self?.getJavaScriptObject() else {
+-        log.warn("Trying to send event '\(event)' to \(type(of: self)), but the JS object is no longer associated with the native instance")
 +    runtime.schedule { [weak appContext] in
 +      guard
 +        let appContext,
 +        let runtime = try? appContext.runtime,
 +        let jsObject = appContext.sharedObjectRegistry.get(objectId)?.javaScript.lock()
 +      else {
-         log.warn("Trying to send event '\(event)' to \(type(of: self)), but the JS object is no longer associated with the native instance")
++        log.warn("Trying to send event '\(event)' to \(objectTypeName), but the JS object is no longer associated with the native instance")
          return
        }
  
