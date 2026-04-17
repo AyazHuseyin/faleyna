@@ -1,14 +1,18 @@
 diff --git a/node_modules/react-native-screens/ios/conversion/RNSConversions.h b/node_modules/react-native-screens/ios/conversion/RNSConversions.h
-index 1cd01f3..bdf7460 100644
+index 1cd01f3..1c0bd18 100644
 --- a/node_modules/react-native-screens/ios/conversion/RNSConversions.h
 +++ b/node_modules/react-native-screens/ios/conversion/RNSConversions.h
-@@ -2,7 +2,9 @@
+@@ -1,7 +1,13 @@
+ #pragma once
  
  #if defined(__cplusplus)
++// Standard library (Props.h pulls in RN/Fabric C++ types; these are still required for declarations below.)
++#include <optional>
++#include <string>
++
  #import <React/RCTImageSource.h>
-+#if RCT_NEW_ARCH_ENABLED
++// Codegen header: required for facebook::react / react:: types in this file,
++// even when the app is built with RCT_NEW_ARCH_ENABLED=0 (see RNSConversions-BottomTabs.mm).
  #import <react/renderer/components/rnscreens/Props.h>
-+#endif // RCT_NEW_ARCH_ENABLED
  #import "RNSEnums.h"
  
- #if RCT_NEW_ARCH_ENABLED
