@@ -1,0 +1,125 @@
+diff --git a/node_modules/expo/ios/AppDelegates/EXReactRootViewFactory.h b/node_modules/expo/ios/AppDelegates/EXReactRootViewFactory.h
+index 2daec5d..370bf7c 100644
+--- a/node_modules/expo/ios/AppDelegates/EXReactRootViewFactory.h
++++ b/node_modules/expo/ios/AppDelegates/EXReactRootViewFactory.h
+@@ -23,17 +23,11 @@ NS_SWIFT_NAME(ExpoReactRootViewFactory)
+ 
+ /**
+  Calls super `viewWithModuleName:initialProperties:launchOptions:` from `RCTRootViewFactory`.
++ (React Native 0.81 does not expose devMenuConfiguration on RCTRootViewFactory.)
+  */
+-#if TARGET_OS_IOS || TARGET_OS_TV
+-- (UIView *)superViewWithModuleName:(NSString *)moduleName
+-                  initialProperties:(nullable NSDictionary *)initialProperties
+-                      launchOptions:(nullable NSDictionary *)launchOptions
+-               devMenuConfiguration:(nullable RCTDevMenuConfiguration *)devMenuConfiguration;
+-#else
+ - (UIView *)superViewWithModuleName:(NSString *)moduleName
+                   initialProperties:(nullable NSDictionary *)initialProperties
+                       launchOptions:(nullable NSDictionary *)launchOptions;
+-#endif
+ 
+ @end
+ 
+diff --git a/node_modules/expo/ios/AppDelegates/EXReactRootViewFactory.mm b/node_modules/expo/ios/AppDelegates/EXReactRootViewFactory.mm
+index 33e26db..2ee8b0a 100644
+--- a/node_modules/expo/ios/AppDelegates/EXReactRootViewFactory.mm
++++ b/node_modules/expo/ios/AppDelegates/EXReactRootViewFactory.mm
+@@ -2,7 +2,6 @@
+ 
+ #import <Expo/EXReactRootViewFactory.h>
+ #import <Expo/RCTAppDelegateUmbrella.h>
+-#import <React/RCTDevMenu.h>
+ #import <ExpoModulesCore/EXReactDelegateProtocol.h>
+ 
+ @interface RCTRootViewFactory ()
+@@ -23,37 +22,13 @@
+   return self;
+ }
+ 
+-#if TARGET_OS_IOS || TARGET_OS_TV
+ - (UIView *)viewWithModuleName:(NSString *)moduleName
+              initialProperties:(nullable NSDictionary *)initialProperties
+                  launchOptions:(nullable NSDictionary *)launchOptions
+-          devMenuConfiguration:(RCTDevMenuConfiguration *)devMenuConfiguration
+ {
+   if (self.reactDelegate != nil) {
+     return [((id<EXReactDelegateProtocol>)self.reactDelegate) createReactRootViewWithModuleName:moduleName initialProperties:initialProperties launchOptions:launchOptions];
+   }
+-  return [super viewWithModuleName:moduleName initialProperties:initialProperties launchOptions:launchOptions devMenuConfiguration:devMenuConfiguration];
+-}
+-
+-- (UIView *)superViewWithModuleName:(NSString *)moduleName
+-                  initialProperties:(nullable NSDictionary *)initialProperties
+-                      launchOptions:(nullable NSDictionary *)launchOptions
+-               devMenuConfiguration:(nullable RCTDevMenuConfiguration *)devMenuConfiguration
+-{
+-  if (devMenuConfiguration == nil) {
+-    devMenuConfiguration = [RCTDevMenuConfiguration defaultConfiguration];
+-  }
+-
+-  return [super viewWithModuleName:moduleName initialProperties:initialProperties launchOptions:launchOptions devMenuConfiguration:devMenuConfiguration];
+-}
+-#else
+-- (UIView *)viewWithModuleName:(NSString *)moduleName
+-             initialProperties:(nullable NSDictionary *)initialProperties
+-                 launchOptions:(nullable NSDictionary *)launchOptions
+-{
+-  if (self.reactDelegate != nil) {
+-    return [self.reactDelegate createReactRootViewWithModuleName:moduleName initialProperties:initialProperties launchOptions:launchOptions];
+-  }
+   return [super viewWithModuleName:moduleName initialProperties:initialProperties launchOptions:launchOptions];
+ }
+ 
+@@ -63,7 +38,6 @@
+ {
+   return [super viewWithModuleName:moduleName initialProperties:initialProperties launchOptions:launchOptions];
+ }
+-#endif
+ 
+ - (NSURL *)bundleURL
+ {
+diff --git a/node_modules/expo/ios/AppDelegates/ExpoReactNativeFactory.swift b/node_modules/expo/ios/AppDelegates/ExpoReactNativeFactory.swift
+index 925e0f9..8943387 100644
+--- a/node_modules/expo/ios/AppDelegates/ExpoReactNativeFactory.swift
++++ b/node_modules/expo/ios/AppDelegates/ExpoReactNativeFactory.swift
+@@ -110,38 +110,20 @@ public class ExpoReactNativeFactory: ExpoReactNativeFactoryObjC, ExpoReactNative
+ 
+     let rootView: UIView
+     if let factory = self.rootViewFactory as? ExpoReactRootViewFactory {
+-      // RCTDevMenuConfiguration is only available in react-native 0.83+
+-#if os(iOS) || os(tvOS)
+       // When calling `recreateRootViewWithBundleURL:` from `EXReactRootViewFactory`,
+       // we don't want to loop the ReactDelegate again. Otherwise, it will be an infinite loop.
+-      rootView = factory.superView(
+-        withModuleName: moduleName ?? defaultModuleName,
+-        initialProperties: initialProps,
+-        launchOptions: launchOptions ?? [:],
+-        devMenuConfiguration: self.devMenuConfiguration
+-      )
+-#else
++      // React Native 0.81: no devMenuConfiguration on RCTRootViewFactory.
+       rootView = factory.superView(
+         withModuleName: moduleName ?? defaultModuleName,
+         initialProperties: initialProps,
+         launchOptions: launchOptions ?? [:]
+       )
+-#endif
+     } else {
+-#if os(iOS) || os(tvOS)
+-      rootView = rootViewFactory.view(
+-        withModuleName: moduleName ?? defaultModuleName,
+-        initialProperties: initialProps,
+-        launchOptions: launchOptions,
+-        devMenuConfiguration: self.devMenuConfiguration
+-      )
+-#else
+       rootView = rootViewFactory.view(
+         withModuleName: moduleName ?? defaultModuleName,
+         initialProperties: initialProps,
+         launchOptions: launchOptions
+       )
+-#endif
+     }
+ 
+     return rootView
