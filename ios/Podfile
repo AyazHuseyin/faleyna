@@ -46,11 +46,17 @@ target 'faleyna' do
     react_root = File.join(rn_root, 'React')
     react_core_header_root = File.join(installer.sandbox.root, 'Headers', 'Public', 'React-Core', 'React')
 
+    # RN new-architecture codegen output (Props.h for react-native-screens, etc.): ios/build/generated/ios
+    codegen_generated_ios = File.join(Pod::Config.instance.installation_root, 'build', 'generated', 'ios')
+
     universal_headers = [
       '$(inherited)',
       '$(PODS_ROOT)/Headers/Public',
       '$(PODS_ROOT)/Headers/Private',
       '"${PODS_CONFIGURATION_BUILD_DIR}/**"',
+      # So #import <react/renderer/components/rnscreens/Props.h> resolves when RCT_NEW_ARCH_ENABLED=0
+      "\"#{codegen_generated_ios}\"",
+      '$(PODS_ROOT)/../build/generated/ios',
       '$(PODS_ROOT)/React-Core/React',
       '$(PODS_ROOT)/React-Core/React/Fabric',
       '$(PODS_ROOT)/React-Core/React/Fabric/Mounting',
@@ -80,6 +86,9 @@ target 'faleyna' do
         ].join(' ').strip
         cfg.build_settings['OTHER_CFLAGS'] = [
           cfg.build_settings['OTHER_CFLAGS'] || '$(inherited)',
+          # C/C++/ObjC++ (e.g. RNSConversions.h) need -I for generated Fabric component headers
+          "-I\"#{codegen_generated_ios}\"",
+          '-I$(PODS_ROOT)/../build/generated/ios',
           '-isystem $(PODS_ROOT)/RCT-Folly',
           '-isystem $(PODS_ROOT)/boost',
           '-isystem $(PODS_ROOT)/DoubleConversion',

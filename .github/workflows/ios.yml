@@ -52,6 +52,10 @@ jobs:
           RCT_NEW_ARCH_ENABLED: '0'
           COCOAPODS_DISABLE_STATS: 'YES'
 
+      # Ensures ios/build/generated/ios (e.g. react/renderer/components/rnscreens/Props.h) exists before compile.
+      - name: iOS codegen (rnscreens Props.h)
+        run: node node_modules/react-native/scripts/generate-codegen-artifacts.js -p . -o ios -t ios
+
       - name: Xcode build (Simulator, no code signing)
         env:
           RCT_NO_LAUNCH_PACKAGER: '1'
