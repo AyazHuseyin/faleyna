@@ -1,3 +1,20 @@
+diff --git a/node_modules/expo-modules-core/ios/Core/DynamicTypes/DynamicRawType.swift b/node_modules/expo-modules-core/ios/Core/DynamicTypes/DynamicRawType.swift
+index 8fe764a..ad34f76 100644
+--- a/node_modules/expo-modules-core/ios/Core/DynamicTypes/DynamicRawType.swift
++++ b/node_modules/expo-modules-core/ios/Core/DynamicTypes/DynamicRawType.swift
+@@ -35,8 +35,11 @@ internal struct DynamicRawType<InnerType>: AnyDynamicType {
+     // TODO: Definitions and JS object builders should have its own dynamic type.
+     // We use `DynamicRawType` for this only temporarily.
+     if let objectBuilder = result as? JavaScriptObjectBuilder {
++      // Swift 6 strict concurrency may complain about capturing `objectBuilder` across isolation.
++      // Box it as @unchecked Sendable to avoid false-positive data race diagnostics.
++      let unsafeBuilder = NonisolatedUnsafeVar(objectBuilder)
+       return try JavaScriptActor.assumeIsolated {
+-        return try objectBuilder.build(appContext: appContext)
++        return try unsafeBuilder.value.build(appContext: appContext)
+       } as Any
+     }
+     return result
 diff --git a/node_modules/expo-modules-core/ios/Core/DynamicTypes/DynamicSwiftUIViewType.swift b/node_modules/expo-modules-core/ios/Core/DynamicTypes/DynamicSwiftUIViewType.swift
 index 586f261..6d592e7 100644
 --- a/node_modules/expo-modules-core/ios/Core/DynamicTypes/DynamicSwiftUIViewType.swift
@@ -73,6 +90,38 @@ index 5ddcbb6..b857555 100644
  public typealias PersistentFileLogCompletionHandler = (Error?) -> Void
  
  /**
+diff --git a/node_modules/expo-modules-core/ios/Core/SharedObjects/SharedObject.swift b/node_modules/expo-modules-core/ios/Core/SharedObjects/SharedObject.swift
+index 3e81f83..1720de5 100644
+--- a/node_modules/expo-modules-core/ios/Core/SharedObjects/SharedObject.swift
++++ b/node_modules/expo-modules-core/ios/Core/SharedObjects/SharedObject.swift
+@@ -79,16 +79,24 @@ public extension SharedObject { // swiftlint:disable:this no_grouping_extension
+     // Collect arguments and their dynamic types from parameter pack
+     var argumentPairs: [(AnyArgument, AnyDynamicType)] = []
+     repeat argumentPairs.append((each arguments, ~(each A).self))
++    let unsafeArgumentPairs = NonisolatedUnsafeVar(argumentPairs)
++
++    // Avoid capturing `self` in a concurrency-checked closure.
++    let objectId = sharedObjectId
+ 
+     // Schedule the event to be asynchronously emitted from the runtime's thread
+-    runtime.schedule { [weak self, weak appContext] in
+-      guard let appContext, let runtime = try? appContext.runtime, let jsObject = self?.getJavaScriptObject() else {
++    runtime.schedule { [weak appContext] in
++      guard
++        let appContext,
++        let runtime = try? appContext.runtime,
++        let jsObject = appContext.sharedObjectRegistry.get(objectId)?.javaScript.lock()
++      else {
+         log.warn("Trying to send event '\(event)' to \(type(of: self)), but the JS object is no longer associated with the native instance")
+         return
+       }
+ 
+       // Convert native arguments to JS, just like function results
+-      let arguments = argumentPairs.map { argument, dynamicType in
++      let arguments = unsafeArgumentPairs.value.map { argument, dynamicType in
+         return Conversions.convertFunctionResult(argument, appContext: appContext, dynamicType: dynamicType)
+       }
+ 
 diff --git a/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/ExpoSwiftUI.swift b/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/ExpoSwiftUI.swift
 index b376a98..26c695d 100644
 --- a/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/ExpoSwiftUI.swift
@@ -123,10 +172,10 @@ index d62091c..07855fc 100644
      }
    }
 diff --git a/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIVirtualView.swift b/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIVirtualView.swift
-index 6d65323..f7a0e99 100644
+index 6d65323..058c593 100644
 --- a/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIVirtualView.swift
 +++ b/node_modules/expo-modules-core/ios/Core/Views/SwiftUI/SwiftUIVirtualView.swift
-@@ -80,15 +80,17 @@ extension ExpoSwiftUI {
+@@ -80,15 +80,18 @@ extension ExpoSwiftUI {
      /**
       Updates the environment object with props, based on the given dictionary with raw props.
       */
@@ -140,20 +189,21 @@ index 6d65323..f7a0e99 100644
 -      } catch let error {
 -        log.error("Updating props for \(self) has failed: \(error.localizedDescription)")
 +    nonisolated override func updateProps(_ rawProps: [String: Any]) {
++      let unsafeRawProps = NonisolatedUnsafeVar(rawProps)
 +      MainActor.assumeIsolated {
 +        guard let appContext else {
 +          log.error("AppContext is not available, view props cannot be updated for \(self)")
 +          return
 +        }
 +        do {
-+          try props.updateRawProps(rawProps, appContext: appContext)
++          try props.updateRawProps(unsafeRawProps.value, appContext: appContext)
 +        } catch let error {
 +          log.error("Updating props for \(self) has failed: \(error.localizedDescription)")
 +        }
        }
      }
  
-@@ -102,15 +104,16 @@ extension ExpoSwiftUI {
+@@ -102,15 +105,16 @@ extension ExpoSwiftUI {
      /**
       Calls lifecycle methods registered by `OnViewDidUpdateProps` definition component.
       */
@@ -178,7 +228,7 @@ index 6d65323..f7a0e99 100644
      }
  
      /**
-@@ -126,52 +129,58 @@ extension ExpoSwiftUI {
+@@ -126,52 +130,58 @@ extension ExpoSwiftUI {
      /**
       Fabric calls this function when mounting (attaching) a child component view.
       */
@@ -270,7 +320,7 @@ index 6d65323..f7a0e99 100644
      }
  
      /**
-@@ -193,7 +202,7 @@ extension ExpoSwiftUI {
+@@ -193,7 +203,7 @@ extension ExpoSwiftUI {
  
  // MARK: - ViewWrapper
  
